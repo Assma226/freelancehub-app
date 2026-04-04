@@ -324,6 +324,22 @@ def get_freelancer(freelancer_id: str):
         fl['avatar']      = user.get('avatar', '')
         fl['member_since']= user.get('created_at', '')
 
+    # Email / téléphone du freelance : uniquement si le visiteur est un client connecté (X-User-Id)
+    x_uid = request.headers.get('X-User-Id')
+    if x_uid:
+        try:
+            viewer = mongo.db.users.find_one({'_id': ObjectId(x_uid)}, {'role': 1})
+            if viewer and viewer.get('role') == 'client':
+                fu = mongo.db.users.find_one(
+                    {'_id': ObjectId(fl['user_id'])},
+                    {'email': 1, 'phone': 1},
+                )
+                if fu:
+                    fl['contact_email'] = fu.get('email') or ''
+                    fl['contact_phone'] = fu.get('phone') or ''
+        except Exception:
+            pass
+
     fid_profile = ObjectId(fl['id'])
     fid_user    = ObjectId(fl['user_id'])
     reviews     = list(mongo.db.reviews.find({'$or': [
