@@ -1,0 +1,319 @@
+.detail-shell {
+  width: 100%;
+  min-height: 100%;
+  background: #f6f3f5;
+  padding-bottom: 24px;
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: linear-gradient(180deg, #8f1735, #7a1530);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.top-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 40px 0;
+}
+
+.panel-card,
+.proposal-card {
+  margin: 14px 10px 0;
+  padding: 22px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.05);
+}
+
+.badge {
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #f3dce4;
+  color: #8f1735;
+  font-weight: 700;
+  font-size: 10px;
+}
+
+h1 {
+  margin: 12px 0 10px;
+  font-size: 24px;
+  line-height: 1.12;
+}
+
+p,
+.meta span {
+  color: #5d6880;
+}
+
+.meta {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.favorite-btn {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid #ead7de;
+  border-radius: 14px;
+  background: #faf7f8;
+  color: #8f1735;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.favorite-btn.active {
+  background: #8f1735;
+  color: #fff;
+}
+
+.tracker-link {
+  min-height: 40px;
+  margin-bottom: 12px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 12px;
+  background: #f3e8ec;
+  color: #8f1735;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.proposal-card {
+  background: #fff;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+input,
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 14px;
+  border: 1px solid #e0d9df;
+  background: #faf7f8;
+  padding: 12px;
+}
+
+.error {
+  color: #b42318;
+}
+
+.status-card,
+.history-card,
+.progress-card,
+.contract-card {
+  display: grid;
+  gap: 12px;
+}
+
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.health-pill {
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #e7f6ee;
+  color: #157347;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.health-pill.risk {
+  background: #fff1d7;
+  color: #8a5a00;
+}
+
+.health-pill.blocked {
+  background: #fbe9ea;
+  color: #b42318;
+}
+
+.progress-bar {
+  height: 12px;
+  border-radius: 999px;
+  background: #ececf4;
+  overflow: hidden;
+}
+
+.progress-bar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #9a2f4f, #cf8aa0);
+}
+
+.progress-stats,
+.dual-grid,
+.contract-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.progress-stats article {
+  padding: 14px;
+  border-radius: 16px;
+  background: #faf7f8;
+  border: 1px solid #ece1e5;
+}
+
+.contract-summary article,
+.contract-terms,
+.contract-editor,
+.contract-sign {
+  padding: 14px;
+  border-radius: 16px;
+  background: #faf7f8;
+  border: 1px solid #ece1e5;
+}
+
+.contract-summary strong,
+.contract-summary span,
+.contract-terms strong,
+.contract-terms p {
+  display: block;
+}
+
+.contract-summary span,
+.contract-terms p,
+.contract-sign p {
+  color: #5d6880;
+  font-size: 11px;
+}
+
+.progress-stats strong,
+.progress-stats span {
+  display: block;
+}
+
+.progress-stats strong {
+  color: #313849;
+  font-size: 18px;
+}
+
+.progress-stats span,
+.progress-note {
+  color: #5d6880;
+  font-size: 11px;
+}
+
+.status-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.status-btn {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.status-btn.cancel {
+  background: #fbe9ea;
+  color: #a43843;
+}
+
+.status-btn.complete {
+  background: #e7f6ee;
+  color: #157347;
+}
+
+.status-btn.reopen {
+  background: #eef2ff;
+  color: #4053a3;
+}
+
+.history-list {
+  display: grid;
+  gap: 10px;
+}
+
+.history-item {
+  padding: 14px;
+  border-radius: 16px;
+  background: #faf7f8;
+  border: 1px solid #ece1e5;
+}
+
+.history-item strong,
+.history-item span,
+.history-item small,
+.progress-item strong,
+.progress-item span,
+.progress-item small {
+  display: block;
+}
+
+.history-item strong,
+.progress-item strong {
+  color: #313849;
+  font-size: 13px;
+}
+
+.history-item span,
+.history-item small,
+.progress-item span,
+.progress-item small {
+  margin-top: 4px;
+  color: #5d6880;
+  font-size: 11px;
+}
+
+.progress-log {
+  display: grid;
+  gap: 10px;
+}
+
+.progress-item {
+  padding: 14px;
+  border-radius: 16px;
+  background: #faf7f8;
+  border: 1px solid #ece1e5;
+}
+
+.progress-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 8px 0;
+}
+
+ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #5d6880;
+  font-size: 11px;
+}
+
+ion-button {
+  --background: #8f1735;
+  --border-radius: 10px;
+}

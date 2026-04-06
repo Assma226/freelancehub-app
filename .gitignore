@@ -1,0 +1,14 @@
+# Dépendances Node (Frontend)
+node_modules/
+.angular/
+www/
+
+# Environnement Python (Backend)
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Divers
+.vscode/
+.DS_Stores

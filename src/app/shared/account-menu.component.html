@@ -1,0 +1,38 @@
+<div class="account-menu" (click)="$event.stopPropagation()">
+  <button type="button" class="menu-trigger" (click)="toggleMenu($event)" aria-label="Account Menu" [class.open]="isOpen">
+    <ion-icon name="settings"></ion-icon>
+  </button>
+
+  <div class="menu-panel" [class.open]="isOpen">
+    <div class="menu-header">
+      <span class="menu-title">Menu</span>
+    </div>
+    
+    <button type="button" class="menu-item" (click)="openFavorites($event)">
+      <ion-icon class="menu-icon" name="heart"></ion-icon>
+      <span>Favs</span>
+    </button>
+    
+    <button type="button" class="menu-item" (click)="openNotifications($event)">
+      <ion-icon class="menu-icon" name="notifications"></ion-icon>
+      <span>Alerts</span>
+    </button>
+    
+    <button type="button" class="menu-item" (click)="openSettings($event)">
+      <ion-icon class="menu-icon" name="settings"></ion-icon>
+      <span>Settings</span>
+    </button>
+    
+    <button type="button" class="menu-item" (click)="openPortfolio($event)">
+      <ion-icon class="menu-icon" name="person-circle"></ion-icon>
+      <span>Profile</span>
+    </button>
+    
+    <div class="menu-divider"></div>
+    
+    <button type="button" class="menu-item danger" (click)="logout($event)">
+      <ion-icon class="menu-icon" name="log-out"></ion-icon>
+      <span>Logout</span>
+    </button>
+  </div>
+</div>

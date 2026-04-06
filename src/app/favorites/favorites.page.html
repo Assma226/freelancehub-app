@@ -1,0 +1,75 @@
+<ion-content>
+  <div class="screen-shell">
+    <div class="app-frame">
+      <header class="top-strip">
+        <div class="header-title">
+          <span class="back-mark"></span>
+          <div>
+            <strong>My Favorites</strong>
+            <small>{{ items.length }} saved items</small>
+          </div>
+        </div>
+        <app-account-menu></app-account-menu>
+      </header>
+
+      <section class="hero-card">
+        <span class="hero-pill">Saved for later</span>
+        <h1>Projects and freelancers you want to keep close</h1>
+        <p>Come back to your favorite opportunities and profiles without losing them in the marketplace.</p>
+      </section>
+
+      <div class="loading" *ngIf="loading">
+        <ion-spinner name="crescent"></ion-spinner>
+      </div>
+
+      <section class="panel-card" *ngIf="!loading">
+        <div class="section-head">
+          <h2>Favorite Projects</h2>
+          <span>{{ favoriteProjects.length }}</span>
+        </div>
+        <div class="project-list" *ngIf="favoriteProjects.length; else noProjects">
+          <article class="project-card" *ngFor="let item of favoriteProjects">
+            <div>
+              <strong>{{ item.project?.title || 'Project' }}</strong>
+              <span>{{ item.project?.category || 'General service' }}</span>
+              <small>${{ item.project?.budget_min ?? item.project?.budgetMin ?? 0 }} - ${{ item.project?.budget_max ?? item.project?.budgetMax ?? 0 }}</small>
+            </div>
+            <div class="card-actions">
+              <button type="button" class="secondary-btn" (click)="openProject(item.project?.id)">Open</button>
+              <button type="button" class="ghost-btn" (click)="removeFavorite(item)">Remove</button>
+            </div>
+          </article>
+        </div>
+        <ng-template #noProjects>
+          <p class="empty">No saved projects yet.</p>
+        </ng-template>
+      </section>
+
+      <section class="panel-card" *ngIf="!loading">
+        <div class="section-head">
+          <h2>Favorite Freelancers</h2>
+          <span>{{ favoriteFreelancers.length }}</span>
+        </div>
+        <div class="freelancer-list" *ngIf="favoriteFreelancers.length; else noFreelancers">
+          <article class="freelancer-card" *ngFor="let item of favoriteFreelancers">
+            <div class="avatar">{{ (item.freelancer?.name || 'F').charAt(0) }}</div>
+            <div class="card-copy">
+              <strong>{{ item.freelancer?.name || 'Freelancer' }}</strong>
+              <span>{{ item.freelancer?.title || 'Specialist profile' }}</span>
+              <small>{{ item.freelancer?.hourlyRate || ('$' + (item.freelancer?.hourly_rate || 0) + '/hr') }}</small>
+            </div>
+            <div class="card-actions">
+              <button type="button" class="secondary-btn" (click)="openFreelancer(item.freelancer?.id)">Profile</button>
+              <button type="button" class="ghost-btn" (click)="removeFavorite(item)">Remove</button>
+            </div>
+          </article>
+        </div>
+        <ng-template #noFreelancers>
+          <p class="empty">No saved freelancers yet.</p>
+        </ng-template>
+      </section>
+
+      <app-user-bottom-nav [role]="user?.role || null" active="favorites"></app-user-bottom-nav>
+    </div>
+  </div>
+</ion-content>

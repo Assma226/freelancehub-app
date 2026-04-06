@@ -1,0 +1,87 @@
+<ion-content>
+  <div class="auth-shell">
+    <div class="auth-phone">
+      <div class="status-strip"></div>
+
+      <ng-container *ngIf="mode === 'register' && registerStep === 'choice'; else authForm">
+        <section class="choice-screen">
+          <h1>Create an Account</h1>
+          <p>
+            How are you planning to use TalentHub?
+            We'll streamline your account setup accordingly.
+          </p>
+
+          <button type="button" class="choice-button" (click)="chooseRole('freelancer')">WORK AS A FREELANCER</button>
+          <button type="button" class="choice-button" (click)="chooseRole('client')">RECRUIT AS A CLIENT</button>
+          <button type="button" class="floating-dot" (click)="switchMode('login')"></button>
+        </section>
+      </ng-container>
+
+      <ng-template #authForm>
+        <section class="form-screen">
+          <div class="top-row">
+            <button type="button" class="back-link" *ngIf="mode === 'register'" (click)="backToRoleChoice()">&lt;</button>
+            <button type="button" class="back-link" *ngIf="mode === 'login'" (click)="switchMode('register')">&lt;</button>
+          </div>
+
+          <div class="intro-copy" *ngIf="mode === 'login'">
+            <h1>Welcome <span>Back</span></h1>
+          </div>
+
+          <div class="intro-copy" *ngIf="mode === 'register'">
+            <h1>Become a <span>{{ role === 'client' ? 'client' : 'freelancer' }}</span></h1>
+          </div>
+
+          <div class="form-stack">
+            <label *ngIf="mode === 'register'">
+              <input [(ngModel)]="form.firstName" placeholder="First Name" />
+            </label>
+            <label *ngIf="mode === 'register'">
+              <input [(ngModel)]="form.lastName" placeholder="Last Name" />
+            </label>
+            <label>
+              <input type="email" [(ngModel)]="form.email" placeholder="Email Address" />
+            </label>
+            <label *ngIf="mode === 'register'">
+              <input [(ngModel)]="form.address" placeholder="Legal Address" />
+            </label>
+            <label *ngIf="mode === 'register' && role === 'freelancer'">
+              <input [(ngModel)]="form.title" placeholder="Job Title" />
+            </label>
+            <label *ngIf="mode === 'register'">
+              <input [(ngModel)]="form.location" placeholder="Location" />
+            </label>
+            <label>
+              <input type="password" [(ngModel)]="form.password" placeholder="Password" />
+            </label>
+            <label *ngIf="mode === 'register'">
+              <input type="password" [(ngModel)]="form.confirmPassword" placeholder="Confirm Password" />
+            </label>
+          </div>
+
+          <p class="error" *ngIf="error">{{ error }}</p>
+
+          <ion-button expand="block" class="primary-action" (click)="submit()" [disabled]="loading">
+            {{ loading ? 'Chargement...' : (mode === 'login' ? 'Log In' : 'Sign Up') }}
+          </ion-button>
+
+          <div class="form-footer" *ngIf="mode === 'login'">
+            <p>Don't have an account? <button type="button" (click)="switchMode('register')">Sign Up</button></p>
+          </div>
+
+          <div class="form-footer" *ngIf="mode === 'register'">
+            <p>Already have an account? <button type="button" (click)="switchMode('login')">Sign In</button></p>
+          </div>
+        </section>
+      </ng-template>
+
+      <div class="auth-dock">
+        <span class="dock-item"></span>
+        <span class="dock-item"></span>
+        <span class="dock-center"></span>
+        <span class="dock-item active"></span>
+        <span class="dock-item"></span>
+      </div>
+    </div>
+  </div>
+</ion-content>

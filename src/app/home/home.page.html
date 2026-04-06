@@ -1,0 +1,101 @@
+<ion-content>
+  <div class="welcome-shell">
+    <div class="phone-frame app-frame">
+      <div class="top-bar">
+        <div class="brand-block">
+          <strong>TalentHub</strong>
+          <span>{{ isClient ? 'Espace client' : 'Espace freelancer' }}</span>
+        </div>
+        <div class="top-actions">
+          <button type="button" class="notification-btn" (click)="openNotifications()" aria-label="Notifications">
+            <span class="notification-bell"></span>
+            <span class="notification-label">Alerts</span>
+            <span class="notification-badge" *ngIf="unreadNotifications">{{ unreadNotifications }}</span>
+          </button>
+          <app-account-menu></app-account-menu>
+        </div>
+      </div>
+
+      <section class="hero-zone">
+        <span class="pill">{{ isClient ? 'Dashboard client' : 'Dashboard freelancer' }}</span>
+        <h1>Bonjour {{ user?.name || 'utilisateur' }}</h1>
+        <p>
+          {{ isClient
+            ? 'Publiez une demande, ouvrez un service et suivez vos candidats dans la meme structure que welcome.'
+            : 'Accedez aux services, aux projets du marche et a vos candidatures dans une interface identique.' }}
+        </p>
+        <div class="hero-actions">
+          <ion-button (click)="isClient ? openClientHub() : openMyJobs()">
+            {{ isClient ? 'Creer une demande' : 'Mes propositions' }}
+          </ion-button>
+          <ion-button fill="outline" class="cta-secondary" (click)="goMessages()">
+            Messagerie
+            <span class="cta-badge" *ngIf="unreadMessages">{{ unreadMessages }}</span>
+          </ion-button>
+        </div>
+      </section>
+
+      <div class="content-zone">
+        <div class="loading" *ngIf="loading">
+          <ion-spinner name="crescent"></ion-spinner>
+        </div>
+
+        <section class="section-card compact-card" *ngIf="!loading">
+          <div class="section-head">
+            <h2>Categories</h2>
+            <button type="button" class="mini-link" (click)="openService('all')">Marche</button>
+          </div>
+          <div class="category-grid">
+            <button type="button" class="category-chip" *ngFor="let c of categories" (click)="openService(c.slug)">
+              <span class="category-icon">{{ categorySymbol(c) }}</span>
+              <strong>{{ c.name }}</strong>
+              <small>{{ c.projects_count || 0 }} projets</small>
+            </button>
+          </div>
+        </section>
+
+        <section class="section-card compact-card" *ngIf="!loading">
+          <div class="section-head">
+            <h2>Actions rapides</h2>
+          </div>
+          <div class="quick-grid">
+            <button type="button" class="quick-card" (click)="openMyJobs()">Ouvrir le dashboard</button>
+            <button type="button" class="quick-card" *ngIf="isClient" (click)="openClientHub()">Publier une demande</button>
+            <button type="button" class="quick-card" *ngIf="!isClient" (click)="openService('all')">Explorer les services</button>
+            <button type="button" class="quick-card" (click)="goMessages()">Acceder a la messagerie</button>
+            <button type="button" class="quick-card" (click)="openNotifications()">Voir les notifications</button>
+            <button type="button" class="quick-card" (click)="openProgressTracker()">Suivre les projets</button>
+            <button type="button" class="quick-card" (click)="openFavorites()">Mes favoris</button>
+          </div>
+        </section>
+
+        <section class="section-card compact-card" *ngIf="!loading">
+          <div class="section-head">
+            <h2>Projets ouverts</h2>
+          </div>
+          <div class="project-list">
+            <article class="project-card" *ngFor="let project of projects" (click)="openProject(project.id)">
+              <div class="project-cover"></div>
+              <div class="project-body">
+                <span class="project-tag">{{ project.category || project.category_name || 'Categorie' }}</span>
+                <strong>{{ project.title }}</strong>
+                <p>{{ project.description || 'Projet sans description.' }}</p>
+                <div class="meta">
+                  <span>${{ project.budgetMin ?? project.budget_min ?? 0 }} - ${{ project.budgetMax ?? project.budget_max ?? 0 }}</span>
+                  <span>{{ project.applicants ?? project.applicants_count ?? 0 }} candidats</span>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <app-user-bottom-nav
+          [role]="user?.role || null"
+          active="home"
+          [unreadMessages]="unreadMessages"
+          [unreadNotifications]="unreadNotifications">
+        </app-user-bottom-nav>
+      </div>
+    </div>
+  </div>
+</ion-content>

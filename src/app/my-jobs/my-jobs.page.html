@@ -1,0 +1,95 @@
+<ion-content>
+  <div class="jobs-shell">
+    <div class="jobs-frame">
+      <div class="top-bar">
+        <div class="top-left">
+          <button type="button" class="back-btn">&lt;</button>
+          <span>My Jobs</span>
+        </div>
+        <app-account-menu></app-account-menu>
+      </div>
+
+      <div class="tabs">
+        <button type="button" [class.active]="tab === 'bid'" (click)="tab = 'bid'">Job Bid</button>
+        <button type="button" [class.active]="tab === 'pending'" (click)="tab = 'pending'">Pending</button>
+        <button type="button" [class.active]="tab === 'reviewed'" (click)="tab = 'reviewed'">Reviewed ({{ reviewed.length }})</button>
+      </div>
+
+      <div class="loading" *ngIf="loading">
+        <ion-spinner name="crescent"></ion-spinner>
+      </div>
+
+      <div class="empty-state" *ngIf="!loading && !currentItems.length">
+        <h2>{{ emptyStateTitle }}</h2>
+        <p>{{ emptyStateCopy }}</p>
+        <button type="button" class="start-btn" (click)="startHere()">Start Here</button>
+      </div>
+
+      <div class="list-zone" *ngIf="!loading && currentItems.length">
+        <article class="job-card" *ngFor="let item of currentItems">
+          <div class="job-head">
+            <div>
+              <strong>{{ item.title }}</strong>
+              <span>{{ item.category || item.company }}</span>
+            </div>
+            <button type="button" class="open-btn" (click)="goProject(item.id)">Open</button>
+          </div>
+
+          <div class="status-row">
+            <span class="status-pill" [class.pending]="item.status === 'open' || item.status === 'pending'" [class.progress]="item.status === 'in-progress' || item.status === 'accepted'" [class.done]="item.status === 'completed'" [class.cancelled]="item.status === 'cancelled' || item.status === 'rejected'">
+              {{ statusLabel(item.status) }}
+            </span>
+            <button type="button" class="history-toggle" *ngIf="role === 'client' && item.statusHistory.length" (click)="toggleHistory(item.id)">
+              {{ expandedHistoryId === item.id ? 'Hide history' : 'View history' }}
+            </button>
+          </div>
+
+          <div class="job-meta" *ngIf="role === 'client'">
+            <span>Budget max: ${{ item.bid }}</span>
+            <span>{{ item.applicants }} candidats</span>
+          </div>
+          <div class="job-meta" *ngIf="role !== 'client'">
+            <span>Proposition: ${{ item.bid }}</span>
+            <span>Net: ${{ item.receives }}</span>
+          </div>
+
+          <button type="button" class="candidate-toggle" *ngIf="item.status === 'in-progress' || item.status === 'accepted'" (click)="openTracker()">
+            Ouvrir le tracker
+          </button>
+          <button type="button" class="candidate-toggle" *ngIf="item.status === 'in-progress' || item.status === 'accepted'" (click)="openContract(item.id)">
+            Voir l accord de mission
+          </button>
+
+          <button type="button" class="candidate-toggle" *ngIf="role === 'client' && tab === 'bid'" (click)="toggleCandidates(item.id)">
+            {{ expandedProjectId === item.id ? 'Fermer les candidats' : 'Voir les candidats' }}
+          </button>
+
+          <div class="candidate-list" *ngIf="role === 'client' && expandedProjectId === item.id">
+            <div class="loading" *ngIf="applicationsLoading[item.id]">
+              <ion-spinner name="crescent"></ion-spinner>
+            </div>
+            <article class="candidate-card" *ngFor="let app of applicationsByProject[item.id] || []">
+              <strong>{{ app.freelancer_name || 'Freelancer' }}</strong>
+              <span>${{ app.bid_amount || 0 }} - {{ app.status || 'pending' }}</span>
+              <p>{{ app.cover_letter || 'Aucune lettre.' }}</p>
+              <div class="candidate-actions" *ngIf="app.status === 'pending'">
+                <button type="button" class="accept" (click)="reviewCandidate(item.id, app.id, 'accept')">Accepter</button>
+                <button type="button" class="reject" (click)="reviewCandidate(item.id, app.id, 'reject')">Refuser</button>
+              </div>
+            </article>
+          </div>
+
+          <div class="history-list" *ngIf="role === 'client' && expandedHistoryId === item.id && item.statusHistory.length">
+            <article class="history-item" *ngFor="let history of item.statusHistory">
+              <strong>{{ statusLabel(history.status) }}</strong>
+              <span>{{ history.note || 'No note provided' }}</span>
+              <small>{{ history.created_at | date:'medium' }}</small>
+            </article>
+          </div>
+        </article>
+      </div>
+
+      <app-user-bottom-nav [role]="role" active="jobs"></app-user-bottom-nav>
+    </div>
+  </div>
+</ion-content>

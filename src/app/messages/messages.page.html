@@ -1,0 +1,87 @@
+<ion-content>
+  <div class="screen-shell">
+    <div class="app-frame">
+      <header class="top-strip">
+        <div class="header-title">
+          <span class="back-mark"></span>
+          <div>
+            <strong>Messages</strong>
+            <small>{{ activeConversation ? conversationLabel(activeConversation) : 'Inbox' }}</small>
+          </div>
+        </div>
+        <app-account-menu></app-account-menu>
+      </header>
+
+      <section class="status-card">
+        <div>
+          <strong>{{ user?.name || 'Utilisateur' }}</strong>
+          <span>{{ user?.role === 'client' ? 'Client' : 'Freelancer' }}</span>
+        </div>
+        <span class="status-pill">Active</span>
+      </section>
+
+      <section class="panel search-card">
+        <div class="search-shell">
+          <input type="text" placeholder="Search by contacts and job ID" />
+          <span class="search-glass"></span>
+        </div>
+      </section>
+
+      <section class="panel conversation-card">
+        <div class="section-head">
+          <strong>Messages</strong>
+          <span>{{ conversations.length }}</span>
+        </div>
+
+        <div class="conversation-list" *ngIf="conversations.length; else noConversation">
+          <button
+            type="button"
+            class="conversation-item"
+            *ngFor="let conv of conversations"
+            [class.active]="activeConversationId === conv.id"
+            (click)="openConversation(conv.id)">
+            <span class="avatar-badge">{{ conversationLabel(conv).slice(-2) }}</span>
+            <div class="conversation-copy">
+              <strong>{{ conversationLabel(conv) }}</strong>
+              <span>{{ conversationSubtitle(conv) }}</span>
+            </div>
+          </button>
+        </div>
+
+        <ng-template #noConversation>
+          <div class="empty-state">
+            <strong>No conversations yet</strong>
+            <p>Start from a freelancer profile or a project card to open a discussion.</p>
+          </div>
+        </ng-template>
+      </section>
+
+      <section class="panel thread-card">
+        <div class="thread-head">
+          <strong>{{ activeConversation ? conversationLabel(activeConversation) : 'Discussion' }}</strong>
+          <span>{{ messages.length }} msg</span>
+        </div>
+
+        <div class="message-list" *ngIf="messages.length; else noMessage">
+          <article class="message-bubble" *ngFor="let msg of messages" [class.mine]="isMine(msg)">
+            {{ msg.text || '...' }}
+          </article>
+        </div>
+
+        <ng-template #noMessage>
+          <div class="empty-state compact">
+            <strong>No content yet</strong>
+            <p>Select a thread or send the first message.</p>
+          </div>
+        </ng-template>
+
+        <div class="composer">
+          <input [(ngModel)]="draft" placeholder="Write your messages..." />
+          <button type="button" class="send-btn" (click)="sendMessage()" [disabled]="!activeConversationId || !draft.trim()"></button>
+        </div>
+      </section>
+
+      <app-user-bottom-nav [role]="user?.role || null" active="messages"></app-user-bottom-nav>
+    </div>
+  </div>
+</ion-content>

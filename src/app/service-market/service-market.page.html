@@ -1,0 +1,169 @@
+<ion-content>
+  <div class="welcome-shell">
+    <div class="phone-frame app-frame">
+      <div class="top-bar">
+        <div class="brand">TalentHub</div>
+        <div class="top-actions">
+          <button type="button" class="top-link" (click)="goHome()">Accueil</button>
+          <app-account-menu></app-account-menu>
+        </div>
+      </div>
+
+      <div class="hero-zone">
+        <div class="market-head">
+          <span class="service-icon">{{ symbol() }}</span>
+          <div>
+            <p class="eyebrow">Page service</p>
+            <h1>{{ pageTitle }}</h1>
+            <p class="hero-copy">
+              Explorez les projets du marche et les freelancers associes a ce service dans la meme structure que la page welcome.
+            </p>
+          </div>
+        </div>
+
+        <div class="hero-buttons">
+          <ion-button expand="block" fill="outline" class="cta-secondary" (click)="filtersOpen = !filtersOpen">
+            {{ filtersOpen ? 'Fermer les filtres' : 'Recherche avancee' }}
+          </ion-button>
+          <ion-button expand="block" class="cta-primary" *ngIf="isClient" (click)="ideaOpen = !ideaOpen">
+            {{ ideaOpen ? 'Fermer l idee' : 'Proposer une idee de projet' }}
+          </ion-button>
+          <ion-button expand="block" class="cta-primary" *ngIf="!isClient && projects[0]" (click)="openProject(projects[0].id)">
+            Faire une candidature
+          </ion-button>
+          <ion-button expand="block" fill="outline" class="cta-secondary" (click)="goToCreateRequest()">
+            {{ isClient ? 'Voir mes demandes' : 'Voir mes propositions' }}
+          </ion-button>
+        </div>
+      </div>
+
+      <div class="content-zone">
+        <section class="section panel-card filter-card" *ngIf="filtersOpen">
+          <div class="section-head">
+            <h2>Recherche avancee</h2>
+            <span>{{ hasActiveFilters ? 'active' : 'standard' }}</span>
+          </div>
+          <div class="form-grid">
+            <label class="full">
+              <span>Mot cle</span>
+              <input [(ngModel)]="filters.keyword" placeholder="Projet, competence, stack..." />
+            </label>
+            <label>
+              <span>Budget min</span>
+              <input type="number" [(ngModel)]="filters.budgetMin" />
+            </label>
+            <label>
+              <span>Budget max</span>
+              <input type="number" [(ngModel)]="filters.budgetMax" />
+            </label>
+            <label>
+              <span>Taux min freelancer</span>
+              <input type="number" [(ngModel)]="filters.minRate" />
+            </label>
+            <label>
+              <span>Taux max freelancer</span>
+              <input type="number" [(ngModel)]="filters.maxRate" />
+            </label>
+            <label>
+              <span>Note minimum</span>
+              <input type="number" [(ngModel)]="filters.minRating" min="0" max="5" />
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" [(ngModel)]="filters.availableOnly" />
+              <span>Freelancers disponibles seulement</span>
+            </label>
+          </div>
+          <div class="card-actions">
+            <button type="button" class="secondary-btn" (click)="resetFilters()">Reinitialiser</button>
+            <button type="button" class="primary-btn" (click)="applyFilters()">Appliquer</button>
+          </div>
+        </section>
+
+        <section class="section panel-card form-card" *ngIf="ideaOpen && isClient">
+          <h2>Nouvelle idee pour {{ pageTitle }}</h2>
+          <div class="form-grid">
+            <label>
+              <span>Titre</span>
+              <input [(ngModel)]="projectIdea.title" placeholder="Ex: Refonte complete de mon site" />
+            </label>
+            <label>
+              <span>Duree</span>
+              <input [(ngModel)]="projectIdea.duration" placeholder="2 semaines" />
+            </label>
+            <label class="full">
+              <span>Description</span>
+              <textarea rows="4" [(ngModel)]="projectIdea.description" placeholder="Expliquez votre besoin ou votre idee"></textarea>
+            </label>
+            <label>
+              <span>Budget min</span>
+              <input type="number" [(ngModel)]="projectIdea.budgetMin" />
+            </label>
+            <label>
+              <span>Budget max</span>
+              <input type="number" [(ngModel)]="projectIdea.budgetMax" />
+            </label>
+          </div>
+          <ion-button expand="block" (click)="createIdea()">Publier cette idee</ion-button>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2>Projets du marche</h2>
+            <span>{{ projects.length }}</span>
+          </div>
+          <div class="stack-list" *ngIf="!loading; else loadingBlock">
+            <article class="project-card" *ngFor="let project of projects">
+              <div class="service-cover"></div>
+              <div class="project-body">
+                <span class="badge">{{ project.category || project.category_name || pageTitle }}</span>
+                <strong>{{ project.title || 'Projet' }}</strong>
+                <p>{{ project.description || 'Projet sans description detaillee.' }}</p>
+                <div class="service-meta">
+                  <span>${{ project.budgetMin ?? project.budget_min ?? 0 }} - ${{ project.budgetMax ?? project.budget_max ?? 0 }}</span>
+                  <span>{{ project.applicants ?? project.applicants_count ?? 0 }} candidats</span>
+                </div>
+                <div class="card-actions">
+                  <button type="button" class="secondary-btn" (click)="openProject(project.id)">Voir le projet</button>
+                  <button type="button" class="primary-btn" *ngIf="!isClient" (click)="openProject(project.id)">Candidater</button>
+                </div>
+              </div>
+            </article>
+            <p class="empty" *ngIf="!projects.length">Aucun projet ne correspond aux filtres actuels.</p>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2>Freelancers associes</h2>
+            <span>{{ filteredFreelancers.length }}</span>
+          </div>
+          <div class="freelancer-list" *ngIf="!loading; else loadingBlock">
+            <article class="freelancer-item" *ngFor="let fl of filteredFreelancers">
+              <div class="freelancer-main">
+                <div class="avatar">{{ (fl.name || 'F').charAt(0) }}</div>
+                <div>
+                  <strong>{{ fl.name || 'Freelancer' }}</strong>
+                  <small>{{ fl.title || 'Profil generaliste' }}</small>
+                  <p>{{ fl.location || 'Remote' }} - {{ fl.hourlyRate || ('$' + (fl.hourly_rate || 0) + '/hr') }}</p>
+                </div>
+              </div>
+              <div class="card-actions">
+                <button type="button" class="secondary-btn" (click)="openFreelancer(fl.id)">Profil</button>
+                <button type="button" class="primary-btn" *ngIf="isClient" (click)="contactFreelancer(fl.user_id)">Contacter</button>
+              </div>
+            </article>
+            <p class="empty" *ngIf="!filteredFreelancers.length">Aucun freelancer ne correspond a cette recherche.</p>
+          </div>
+        </section>
+
+        <app-user-bottom-nav [role]="user?.role || null" active="services"></app-user-bottom-nav>
+      </div>
+    </div>
+  </div>
+</ion-content>
+
+<ng-template #loadingBlock>
+  <div class="loading-state">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+</ng-template>

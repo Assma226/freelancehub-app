@@ -1,0 +1,56 @@
+<ion-content>
+  <div class="screen-shell">
+    <div class="app-frame">
+      <header class="top-strip">
+        <div class="header-title">
+          <span class="back-mark"></span>
+          <div>
+            <strong>Notifications</strong>
+            <small>{{ unreadCount }} unread</small>
+          </div>
+        </div>
+        <app-account-menu></app-account-menu>
+      </header>
+
+      <section class="hero-card">
+        <div>
+          <span class="hero-pill">Activity center</span>
+          <h1>Stay updated</h1>
+          <p>Track messages, new applications, and client decisions from a single mobile-friendly view.</p>
+        </div>
+        <ion-button fill="outline" (click)="markAllRead()" [disabled]="!unreadCount">Mark all read</ion-button>
+      </section>
+
+      <section class="panel-card">
+        <div class="loading" *ngIf="loading">
+          <ion-spinner name="crescent"></ion-spinner>
+        </div>
+
+        <div class="notification-list" *ngIf="!loading && notifications.length; else emptyState">
+          <button
+            type="button"
+            class="notification-item"
+            *ngFor="let item of notifications"
+            [class.unread]="!item.is_read"
+            (click)="openNotification(item)">
+            <span class="notif-icon" [ngClass]="notificationClass(item)">{{ notificationIcon(item) }}</span>
+            <div class="notif-copy">
+              <strong>{{ item.title }}</strong>
+              <p>{{ item.body }}</p>
+            </div>
+            <span class="notif-dot" *ngIf="!item.is_read"></span>
+          </button>
+        </div>
+
+        <ng-template #emptyState>
+          <div class="empty-state" *ngIf="!loading">
+            <strong>No notifications yet</strong>
+            <p>Your next messages, applications, and reviews will appear here.</p>
+          </div>
+        </ng-template>
+      </section>
+
+      <app-user-bottom-nav [role]="user?.role || null" active="notifications"></app-user-bottom-nav>
+    </div>
+  </div>
+</ion-content>
