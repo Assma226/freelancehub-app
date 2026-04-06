@@ -11,6 +11,7 @@
 from flask               import Blueprint, request, jsonify
 from app                 import mongo
 from app.middleware.auth import token_required, _get_identity
+from app.utils.notifications import create_notification
 from bson                import ObjectId
 from datetime            import datetime, timezone
 
@@ -138,6 +139,19 @@ def send_message(conv_id: str):
         {'$set': {'updated_at': now, 'last_message': text}}
     )
 
+    recipients = [participant for participant in conv.get('participants', []) if participant != uid]
+    for recipient in recipients:
+        create_notification(
+            user_id=recipient,
+            notif_type='message_received',
+            title='New message',
+            body=text[:120],
+            actor_id=uid,
+            entity_id=conv_oid,
+            entity_type='conversation',
+            meta={'conversation_id': str(conv_oid)},
+        )
+
     return jsonify({'message_id': str(result.inserted_id), 'text': text}), 201
 
 
@@ -185,5 +199,15 @@ def new_conversation():
             'is_read':         False,
             'created_at':      now,
         })
+        create_notification(
+            user_id=rid,
+            notif_type='message_received',
+            title='New conversation',
+            body=first_msg[:120],
+            actor_id=uid,
+            entity_id=conv_id,
+            entity_type='conversation',
+            meta={'conversation_id': str(conv_id)},
+        )
 
     return jsonify({'conversation_id': str(conv_id)}), 201

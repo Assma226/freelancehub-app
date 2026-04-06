@@ -2,7 +2,7 @@
 from flask              import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, create_refresh_token
 from app                import mongo
-from app.middleware.auth import token_required, freelancer_only, _get_identity
+from app.middleware.auth import token_required, freelancer_only, client_only, _get_identity
 from bson               import ObjectId
 from datetime           import datetime, timezone
 import bcrypt
@@ -402,3 +402,161 @@ def my_applications():
         a['freelancer_id'] = str(a['freelancer_id'])
 
     return jsonify({'applications': apps, 'total': len(apps)})
+
+
+@users_bp.route('/favorites', methods=['GET'])
+@token_required
+def list_favorites():
+    identity = _get_identity()
+    uid = ObjectId(identity['id'])
+    entity_type = (request.args.get('type') or '').strip().lower()
+    query = {'user_id': uid}
+    if entity_type in ('project', 'freelancer'):
+        query['entity_type'] = entity_type
+
+    docs = list(mongo.db.favorites.find(query).sort('created_at', -1))
+    items = []
+    for doc in docs:
+        item = {
+            'id': str(doc.get('_id')),
+            'entity_type': doc.get('entity_type', ''),
+            'entity_id': str(doc.get('entity_id', '')),
+            'created_at': doc.get('created_at'),
+        }
+        if item['entity_type'] == 'project':
+            project = mongo.db.projects.find_one({'_id': doc.get('entity_id')})
+            if project:
+                item['project'] = _project_to_dict_min(project)
+        elif item['entity_type'] == 'freelancer':
+            freelancer = mongo.db.freelancers.find_one({'$or': [{'_id': doc.get('entity_id')}, {'user_id': doc.get('entity_id')}]})
+            if freelancer:
+                serialized = _freelancer_public(dict(freelancer))
+                _enrich_freelancer_mobile(serialized)
+                user = mongo.db.users.find_one({'_id': ObjectId(serialized['user_id'])}, {'name': 1, 'avatar': 1})
+                if user:
+                    serialized['name'] = user.get('name', '')
+                    serialized['avatar'] = user.get('avatar', '')
+                item['freelancer'] = serialized
+        items.append(item)
+
+    return jsonify({'favorites': items, 'total': len(items)})
+
+
+@users_bp.route('/favorites/toggle', methods=['POST'])
+@token_required
+def toggle_favorite():
+    identity = _get_identity()
+    uid = ObjectId(identity['id'])
+    data = request.get_json() or {}
+    entity_type = (data.get('entity_type') or '').strip().lower()
+    entity_id = data.get('entity_id')
+
+    if entity_type not in ('project', 'freelancer'):
+        return jsonify({'error': 'entity_type invalide'}), 400
+    try:
+        entity_oid = ObjectId(entity_id)
+    except Exception:
+        return jsonify({'error': 'entity_id invalide'}), 400
+
+    query = {'user_id': uid, 'entity_type': entity_type, 'entity_id': entity_oid}
+    existing = mongo.db.favorites.find_one(query)
+    if existing:
+        mongo.db.favorites.delete_one({'_id': existing['_id']})
+        return jsonify({'favorited': False})
+
+    mongo.db.favorites.insert_one({
+        'user_id': uid,
+        'entity_type': entity_type,
+        'entity_id': entity_oid,
+        'created_at': datetime.now(timezone.utc),
+    })
+    return jsonify({'favorited': True}), 201
+
+
+@users_bp.route('/favorites/check', methods=['GET'])
+@token_required
+def check_favorite():
+    identity = _get_identity()
+    uid = ObjectId(identity['id'])
+    entity_type = (request.args.get('entity_type') or '').strip().lower()
+    entity_id = request.args.get('entity_id')
+    if entity_type not in ('project', 'freelancer') or not entity_id:
+        return jsonify({'favorited': False})
+    try:
+        entity_oid = ObjectId(entity_id)
+    except Exception:
+        return jsonify({'favorited': False})
+
+    exists = mongo.db.favorites.find_one({'user_id': uid, 'entity_type': entity_type, 'entity_id': entity_oid})
+    return jsonify({'favorited': bool(exists)})
+
+
+@users_bp.route('/freelancers/<freelancer_id>/reviews', methods=['POST'])
+@token_required
+@client_only
+def create_freelancer_review(freelancer_id: str):
+    identity = _get_identity()
+    data = request.get_json() or {}
+    try:
+        rating = int(data.get('rating', 0))
+    except Exception:
+        rating = 0
+    comment = (data.get('comment') or '').strip()
+    project_title = (data.get('project_title') or 'Client review').strip()
+
+    if rating < 1 or rating > 5:
+        return jsonify({'error': 'rating doit etre entre 1 et 5'}), 400
+    if not comment:
+        return jsonify({'error': 'comment requis'}), 400
+
+    try:
+        oid = ObjectId(freelancer_id)
+    except Exception:
+        return jsonify({'error': 'ID invalide'}), 400
+
+    freelancer = mongo.db.freelancers.find_one({'$or': [{'_id': oid}, {'user_id': oid}]})
+    if not freelancer:
+        return jsonify({'error': 'Freelancer introuvable'}), 404
+
+    client = mongo.db.users.find_one({'_id': ObjectId(identity['id'])}, {'name': 1, 'avatar': 1})
+    now = datetime.now(timezone.utc)
+    review = {
+        'freelancer_id': freelancer.get('_id'),
+        'client_id': ObjectId(identity['id']),
+        'project_id': None,
+        'project_title': project_title,
+        'author_name': client.get('name', 'Client') if client else 'Client',
+        'author_avatar': client.get('avatar', '') if client else '',
+        'rating': rating,
+        'comment': comment,
+        'created_at': now,
+        'updated_at': now,
+    }
+    result = mongo.db.reviews.insert_one(review)
+
+    reviews = list(mongo.db.reviews.find({'freelancer_id': freelancer.get('_id')}))
+    total = len(reviews)
+    average = round(sum(float(item.get('rating', 0)) for item in reviews) / total, 1) if total else 0
+    mongo.db.freelancers.update_one(
+        {'_id': freelancer.get('_id')},
+        {'$set': {'rating': average, 'review_count': total, 'reviews_count': total, 'updated_at': now}},
+    )
+
+    return jsonify({
+        'message': 'Avis ajoute',
+        'review_id': str(result.inserted_id),
+        'rating': average,
+        'reviews': total,
+    }), 201
+
+
+def _project_to_dict_min(project: dict) -> dict:
+    return {
+        'id': str(project.get('_id')),
+        'title': project.get('title', ''),
+        'category': project.get('category_name') or project.get('category_slug') or project.get('category', ''),
+        'budget_min': project.get('budget_min', 0),
+        'budget_max': project.get('budget_max', 0),
+        'status': project.get('status', ''),
+        'applicants_count': project.get('applicants_count', 0),
+    }
