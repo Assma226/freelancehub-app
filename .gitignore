@@ -12,3 +12,4 @@ __pycache__/
 # Divers
 .vscode/
 .DS_Stores
+_repo-backups/
