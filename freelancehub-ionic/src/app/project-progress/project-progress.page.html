@@ -1,0 +1,173 @@
+<ion-content>
+  <div class="tracker-shell">
+    <div class="tracker-frame">
+      <header class="top-strip">
+        <div class="title-group">
+          <strong>Project Tracker</strong>
+          <small>{{ role === 'client' ? 'Suivi cote client' : 'Journal de delivery' }}</small>
+        </div>
+        <app-account-menu></app-account-menu>
+      </header>
+
+      <section class="hero-card">
+        <span class="hero-pill">Live progress</span>
+        <h1>Suivez les projets en cours avec des preuves de progression</h1>
+        <p>Heures passees, avancement journalier, prochaines etapes et blocages remontent dans une interface plus professionnelle.</p>
+      </section>
+
+      <div class="loading" *ngIf="loading">
+        <ion-spinner name="crescent"></ion-spinner>
+      </div>
+
+      <p class="error" *ngIf="!loading && error">{{ error }}</p>
+
+      <section class="projects-rail" *ngIf="!loading && projects.length">
+        <button
+          type="button"
+          class="project-chip"
+          *ngFor="let project of projects"
+          [class.active]="selectedProject && selectedProject.id === project.id"
+          (click)="selectProject(project.id)"
+        >
+          <strong>{{ project.title }}</strong>
+          <small>{{ project.progress_percent || 0 }}% complete</small>
+        </button>
+      </section>
+
+      <section class="panel-card summary-card" *ngIf="!loading && selectedProject">
+        <div class="summary-head">
+          <div>
+            <span class="project-tag">{{ selectedProject.category || selectedProject.category_name || 'Project' }}</span>
+            <h2>{{ selectedProject.title }}</h2>
+          </div>
+          <span class="health-pill" [class.risk]="selectedProject.progress_health === 'at-risk'" [class.blocked]="selectedProject.progress_health === 'blocked'">
+            {{ healthLabel(selectedProject.progress_health) }}
+          </span>
+        </div>
+
+        <div class="progress-bar">
+          <span [style.width.%]="selectedProject.progress_percent || 0"></span>
+        </div>
+
+        <div class="stats-grid">
+          <article>
+            <strong>{{ selectedProject.progress_percent || 0 }}%</strong>
+            <span>Completion</span>
+          </article>
+          <article>
+            <strong>{{ selectedProject.total_hours_logged || 0 }}h</strong>
+            <span>Hours logged</span>
+          </article>
+          <article>
+            <strong>{{ selectedProject.days_reported || 0 }}</strong>
+            <span>Tracked days</span>
+          </article>
+          <article>
+            <strong>{{ selectedProject.total_tasks_completed || 0 }}</strong>
+            <span>Tasks done</span>
+          </article>
+        </div>
+
+        <div class="insight-row">
+          <article>
+            <strong>Derniere mise a jour</strong>
+            <span>{{ (selectedProject.progress_last_updated_at | date:'medium') || 'Pas encore de journal' }}</span>
+          </article>
+          <article>
+            <strong>Dernier resume</strong>
+            <span>{{ selectedProject.progress_last_note || 'Le freelancer n a pas encore publie de point d avancement.' }}</span>
+          </article>
+        </div>
+
+        <button type="button" class="open-btn" (click)="openProject(selectedProject.id)">Ouvrir le projet</button>
+      </section>
+
+      <section class="panel-card form-card" *ngIf="!loading && selectedProject && role === 'freelancer'">
+        <div class="section-head">
+          <h3>Journal du jour</h3>
+          <span>Pour rassurer le client</span>
+        </div>
+
+        <label>
+          <span>Titre de mise a jour</span>
+          <input type="text" [(ngModel)]="form.title" placeholder="Ex: Wireframes mobile finalises" />
+        </label>
+        <label>
+          <span>Resume</span>
+          <textarea rows="3" [(ngModel)]="form.summary" placeholder="Explique ce qui a ete fait aujourd hui"></textarea>
+        </label>
+        <div class="form-grid">
+          <label>
+            <span>Heures passees</span>
+            <input type="number" min="0" step="0.5" [(ngModel)]="form.hours_spent" />
+          </label>
+          <label>
+            <span>Progression (%)</span>
+            <input type="number" min="0" max="100" [(ngModel)]="form.completion_percent" />
+          </label>
+        </div>
+        <label>
+          <span>Taches realisees</span>
+          <textarea rows="4" [(ngModel)]="form.achievementsText" placeholder="Une ligne par realisation"></textarea>
+        </label>
+        <label>
+          <span>Prochaine etape</span>
+          <input type="text" [(ngModel)]="form.next_step" placeholder="Ce qui sera livre ensuite" />
+        </label>
+        <label>
+          <span>Blocages ou points d attention</span>
+          <textarea rows="2" [(ngModel)]="form.blockers" placeholder="Laisse vide si tout est fluide"></textarea>
+        </label>
+        <label>
+          <span>Sante du projet</span>
+          <select [(ngModel)]="form.health">
+            <option value="on-track">On track</option>
+            <option value="at-risk">At risk</option>
+            <option value="blocked">Blocked</option>
+          </select>
+        </label>
+
+        <p class="error" *ngIf="error">{{ error }}</p>
+        <button type="button" class="submit-btn" [disabled]="saving" (click)="submitProgress()">
+          {{ saving ? 'Saving...' : 'Publier la progression' }}
+        </button>
+      </section>
+
+      <section class="panel-card timeline-card" *ngIf="!loading && selectedProject">
+        <div class="section-head">
+          <h3>Journal d avancement</h3>
+          <span>{{ progressEntries.length }} updates</span>
+        </div>
+
+        <div class="timeline-list" *ngIf="progressEntries.length; else emptyTimeline">
+          <article class="timeline-item" *ngFor="let entry of progressEntries.slice().reverse()">
+            <div class="timeline-dot"></div>
+            <div class="timeline-copy">
+              <div class="timeline-top">
+                <strong>{{ entry.title || 'Update' }}</strong>
+                <span>{{ entry.work_date || (entry.created_at | date:'mediumDate') }}</span>
+              </div>
+              <p>{{ entry.summary || 'No summary provided.' }}</p>
+              <div class="timeline-meta">
+                <span>{{ entry.hours_spent || 0 }}h</span>
+                <span>{{ entry.completion_percent || 0 }}%</span>
+                <span>{{ entry.actor_name || 'Team member' }}</span>
+              </div>
+              <ul class="achievement-list" *ngIf="entry.achievements?.length">
+                <li *ngFor="let item of entry.achievements">{{ item }}</li>
+              </ul>
+              <small *ngIf="entry.next_step">Next: {{ entry.next_step }}</small>
+              <small *ngIf="entry.blockers">Watchout: {{ entry.blockers }}</small>
+            </div>
+          </article>
+        </div>
+
+        <ng-template #emptyTimeline>
+          <p class="empty-state">Aucune progression n a encore ete publiee sur ce projet.</p>
+        </ng-template>
+      </section>
+
+      <app-user-bottom-nav [role]="role" active="progress"></app-user-bottom-nav>
+    </div>
+  </div>
+</ion-content>

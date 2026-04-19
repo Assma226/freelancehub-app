@@ -1,0 +1,87 @@
+<ion-content [fullscreen]="true">
+  <div class="welcome-shell">
+    <div class="phone-frame">
+      <div class="top-bar">
+        <div class="brand">TalentHub</div>
+        <div class="top-actions">
+          <button type="button" class="top-link" (click)="goAuth('login')">Connexion</button>
+          <button type="button" class="top-pill" (click)="goAuth('register')">S'inscrire</button>
+        </div>
+      </div>
+
+      <div class="hero-zone">
+        <label class="search-box">
+          <span class="search-icon">?</span>
+          <input [(ngModel)]="search" placeholder="Rechercher un service" />
+        </label>
+
+        <ion-button expand="block" class="cta-primary" (click)="goAuth('register')">
+          Creer un compte gratuit
+        </ion-button>
+        <ion-button expand="block" fill="outline" class="cta-secondary" (click)="goAuth('login')">
+          J'ai deja un compte
+        </ion-button>
+      </div>
+
+      <div class="content-zone">
+        <section class="section">
+          <h2>Categories</h2>
+          <div class="category-grid" *ngIf="!loading; else categoriesLoading">
+            <button type="button" class="category-item" *ngFor="let category of categories" (click)="openService(category.slug)">
+              <span class="category-icon">{{ categorySymbol(category) }}</span>
+              <strong>{{ category.name }}</strong>
+            </button>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2>Services populaires</h2>
+          <div class="cards-row" *ngIf="!loading; else projectsLoading">
+            <article class="service-card" *ngFor="let project of filteredProjects.slice(0, 6)">
+              <div class="service-cover"></div>
+              <div class="service-body">
+                <span class="badge">Nouveau</span>
+                <strong>{{ project.title || 'Projet' }}</strong>
+                <button
+                  type="button"
+                  class="category-link"
+                  *ngIf="projectCategorySlug(project) as categorySlug; else welcomeCategoryLabel"
+                  (click)="openService(categorySlug)">
+                  {{ project.category || project.category_name || 'Categorie' }}
+                </button>
+                <ng-template #welcomeCategoryLabel>
+                  <small>{{ project.category || project.category_name || 'Categorie' }}</small>
+                </ng-template>
+                <div class="service-meta">
+                  <span>{{ project.applicants ?? project.applicants_count ?? 0 }} cand.</span>
+                  <span>4.6</span>
+                </div>
+                <p>
+                  A partir de
+                  <b>${{ project.budgetMin ?? project.budget_min ?? 0 }}-${{ project.budgetMax ?? project.budget_max ?? 0 }}</b>
+                </p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="bottom-cta">
+          <p>Vous avez trouve une offre qui vous plait ?</p>
+          <ion-button (click)="goAuth('register')">Continuer avec une inscription</ion-button>
+        </section>
+      </div>
+    </div>
+  </div>
+</ion-content>
+
+<ng-template #categoriesLoading>
+  <div class="loading-state">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+</ng-template>
+
+<ng-template #projectsLoading>
+  <div class="loading-state">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+</ng-template>

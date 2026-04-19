@@ -1,0 +1,271 @@
+.jobs-shell {
+  min-height: 100%;
+  display: block;
+  padding: 0;
+  background: linear-gradient(180deg, #efeff3, #e9ebf5);
+}
+
+.jobs-frame {
+  width: 100%;
+  min-height: 100vh;
+  border-radius: 0;
+  overflow: hidden;
+  background: linear-gradient(180deg, #ffffff, #f5f5fa);
+  box-shadow: none;
+  border: 0;
+  padding: 14px 0 18px;
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px 10px;
+}
+
+.top-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #4e4f57;
+}
+
+.back-btn {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #555;
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 0 6px;
+  border-top: 1px solid #efeff4;
+  border-bottom: 1px solid #efeff4;
+}
+
+.tabs button {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: #6e707b;
+  font-size: 10px;
+  position: relative;
+}
+
+.tabs button.active {
+  color: #8f2647;
+}
+
+.tabs button.active::after {
+  content: '';
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: #8f2647;
+}
+
+.empty-state {
+  min-height: clamp(260px, 60vh, 470px);
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  padding: 0 28px;
+  text-align: center;
+}
+
+.empty-state h2 {
+  margin: 0;
+  color: #2f3038;
+  font-size: 16px;
+}
+
+.empty-state p {
+  margin: 12px 0 0;
+  color: #a4a4ad;
+  font-size: 11px;
+  line-height: 1.35;
+  max-width: 220px;
+}
+
+.start-btn {
+  min-width: 128px;
+  min-height: 38px;
+  margin-top: 24px;
+  border: 0;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #9a2f4f, #7f1f3c);
+  box-shadow: 0 10px 22px rgba(127, 31, 60, 0.28);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.list-zone {
+  display: grid;
+  gap: 14px;
+  padding: 18px 16px 0;
+}
+
+.job-card,
+.candidate-card {
+  border-radius: 22px;
+  background: linear-gradient(180deg, #f8f8fc, #f1f2f9);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 10px 28px rgba(175, 181, 205, 0.2);
+  padding: 16px;
+}
+
+.job-head,
+.job-meta,
+.candidate-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.job-head strong,
+.candidate-card strong {
+  display: block;
+  color: #373841;
+}
+
+.job-head span,
+.job-meta span,
+.candidate-card span,
+.candidate-card p {
+  color: #8c8d98;
+  font-size: 11px;
+}
+
+.job-meta {
+  margin-top: 12px;
+}
+
+.open-btn,
+.candidate-toggle,
+.accept,
+.reject {
+  border: 0;
+  border-radius: 16px;
+  min-height: 34px;
+  padding: 0 14px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.status-pill,
+.history-toggle {
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+}
+
+.status-pill {
+  background: #eef1f6;
+  color: #596070;
+}
+
+.status-pill.pending {
+  background: #f5ebef;
+  color: #8f2647;
+}
+
+.status-pill.progress {
+  background: #edf2ff;
+  color: #4053a3;
+}
+
+.status-pill.done {
+  background: #e7f6ee;
+  color: #157347;
+}
+
+.status-pill.cancelled {
+  background: #fbe9ea;
+  color: #a43843;
+}
+
+.history-toggle {
+  border: 0;
+  background: #ececf4;
+  color: #5b5d68;
+}
+
+.open-btn,
+.candidate-toggle,
+.accept {
+  background: #8f2647;
+  color: #fff;
+}
+
+.reject {
+  background: #ececf4;
+  color: #5b5d68;
+}
+
+.candidate-toggle {
+  margin-top: 12px;
+}
+
+.candidate-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.history-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.history-item {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.72);
+  border: 1px solid #ececf4;
+}
+
+.history-item strong,
+.history-item span,
+.history-item small {
+  display: block;
+}
+
+.history-item strong {
+  color: #373841;
+  font-size: 12px;
+}
+
+.history-item span,
+.history-item small {
+  margin-top: 4px;
+  color: #8c8d98;
+  font-size: 10px;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0;
+}

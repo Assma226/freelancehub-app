@@ -1,0 +1,102 @@
+<ion-content>
+  <div class="screen-shell">
+    <div class="app-frame">
+      <header class="top-strip">
+        <div class="header-title">
+          <button type="button" class="back-button" *ngIf="viewMode === 'thread'" (click)="backToList()">
+            <span class="back-mark"></span>
+          </button>
+          <div>
+            <strong>{{ viewMode === 'thread' ? (activeConversation ? conversationLabel(activeConversation) : 'Discussion') : 'Messages' }}</strong>
+            <small>{{ viewMode === 'thread' ? (activeConversation ? conversationMeta(activeConversation) : 'Inbox') : 'Inbox' }}</small>
+          </div>
+        </div>
+        <app-account-menu></app-account-menu>
+      </header>
+
+      <section class="status-card" *ngIf="viewMode === 'list'">
+        <div>
+          <strong>{{ user?.name || 'Utilisateur' }}</strong>
+          <span>{{ user?.role === 'client' ? 'Client' : 'Freelancer' }}</span>
+        </div>
+        <span class="status-pill">Active</span>
+      </section>
+
+      <section class="panel search-card" *ngIf="viewMode === 'list'">
+        <div class="search-shell">
+          <input type="text" [(ngModel)]="search" placeholder="Search by contacts and job ID" />
+          <span class="search-glass"></span>
+        </div>
+      </section>
+
+      <section class="panel conversation-card" *ngIf="viewMode === 'list'">
+        <div class="section-head">
+          <strong>Messages</strong>
+          <span>{{ conversations.length }}</span>
+        </div>
+
+        <div class="conversation-list" *ngIf="filteredConversations.length; else noConversation">
+          <button
+            type="button"
+            class="conversation-item"
+            *ngFor="let conv of filteredConversations"
+            [class.active]="activeConversationId === conv.id"
+            (click)="openConversation(conv.id)">
+            <span class="avatar-badge">{{ conversationInitials(conv) }}</span>
+            <div class="conversation-copy">
+              <strong>{{ conversationLabel(conv) }}</strong>
+              <small>{{ conversationMeta(conv) }}</small>
+              <span>{{ conversationSubtitle(conv) }}</span>
+            </div>
+            <span class="unread-pill" *ngIf="(conv.unread_count || 0) > 0">{{ conv.unread_count }}</span>
+          </button>
+        </div>
+
+        <ng-template #noConversation>
+          <div class="empty-state">
+            <strong>No conversations yet</strong>
+            <p>Start from a freelancer profile or a project card to open a discussion.</p>
+          </div>
+        </ng-template>
+      </section>
+
+      <section class="panel thread-card" *ngIf="viewMode === 'thread'">
+        <div class="thread-head">
+          <div class="thread-contact">
+            <span class="avatar-badge large">{{ activeConversation ? conversationInitials(activeConversation) : 'DM' }}</span>
+            <div>
+              <strong>{{ activeConversation ? conversationLabel(activeConversation) : 'Discussion' }}</strong>
+              <small>{{ activeConversation ? conversationMeta(activeConversation) : 'Select a conversation' }}</small>
+            </div>
+          </div>
+          <div class="thread-actions" *ngIf="activeConversation">
+            <button type="button" class="call-btn" (click)="startCall()">Call</button>
+            <span>{{ messages.length }} msg</span>
+          </div>
+        </div>
+
+        <p class="call-feedback" *ngIf="callFeedback">{{ callFeedback }}</p>
+
+        <div class="message-list" *ngIf="messages.length; else noMessage">
+          <article class="message-bubble" *ngFor="let msg of messages" [class.mine]="isMine(msg)">
+            {{ msg.text || '...' }}
+          </article>
+        </div>
+
+        <ng-template #noMessage>
+          <div class="empty-state compact">
+            <strong>No content yet</strong>
+            <p>Select a thread or send the first message.</p>
+          </div>
+        </ng-template>
+
+        <div class="composer">
+          <input [(ngModel)]="draft" (keydown.enter)="sendMessage()" placeholder="Write your messages..." />
+          <button type="button" class="send-btn" (click)="sendMessage()" [disabled]="!activeConversationId || !draft.trim() || sending"></button>
+        </div>
+      </section>
+
+      <app-user-bottom-nav *ngIf="viewMode === 'list'" [role]="user?.role || null" active="messages"></app-user-bottom-nav>
+    </div>
+  </div>
+</ion-content>

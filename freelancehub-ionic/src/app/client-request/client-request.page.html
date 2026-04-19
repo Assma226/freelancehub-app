@@ -1,0 +1,137 @@
+<ion-content>
+  <div class="screen-shell">
+    <div class="app-frame">
+      <header class="top-strip">
+        <div class="header-title">
+          <span class="back-mark"></span>
+          <span>{{ userRole === 'client' ? 'Client Request' : 'Explore Services' }}</span>
+        </div>
+        <app-account-menu></app-account-menu>
+      </header>
+
+      <section class="hero-copy">
+        <h1>{{ userRole === 'client' ? 'Client Request' : 'Find Projects' }}</h1>
+        <p *ngIf="userRole === 'client'">You can submit your request to freelancers for your projects.</p>
+        <p *ngIf="userRole !== 'client'">Browse live requests and reach the right client projects faster.</p>
+      </section>
+
+      <section class="request-panel">
+        <div class="panel-title">
+          <strong>{{ showForm ? 'Add Your Request' : 'Add Your Request' }}</strong>
+        </div>
+
+        <button
+          *ngIf="userRole === 'client' && !showForm"
+          type="button"
+          class="plus-trigger"
+          (click)="showForm = true"
+          aria-label="Add request">
+        </button>
+
+        <div class="request-form" *ngIf="showForm && userRole === 'client'">
+          <label>
+            <span>Project Title</span>
+            <input [(ngModel)]="form.title" placeholder="Enter your project title" />
+          </label>
+
+          <label>
+            <span>Service</span>
+            <select [(ngModel)]="form.category">
+              <option value="">Select a service</option>
+              <option *ngFor="let c of categoryOptions" [value]="c.slug">{{ c.label }}</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Budget Min</span>
+            <input type="number" [(ngModel)]="form.budgetMin" (ngModelChange)="calcCommission()" placeholder="Minimum budget" />
+          </label>
+
+          <label>
+            <span>Budget Max</span>
+            <input type="number" [(ngModel)]="form.budgetMax" (ngModelChange)="calcCommission()" placeholder="Maximum budget" />
+          </label>
+
+          <label>
+            <span>Duration</span>
+            <input [(ngModel)]="form.duration" placeholder="Timeline or duration" />
+          </label>
+
+          <label class="full">
+            <span>Description</span>
+            <textarea rows="4" [(ngModel)]="form.description" placeholder="Describe your project idea"></textarea>
+          </label>
+
+          <p class="hint" *ngIf="trialUsed">Estimated commission: ${{ estimatedCommission }}</p>
+          <p class="hint" *ngIf="!trialUsed">Your first project stays free for this client account.</p>
+
+          <div class="form-actions">
+            <button type="button" class="ghost-btn" (click)="showForm = false">Cancel</button>
+            <ion-button (click)="submitRequest()">Submit</ion-button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel-card" *ngIf="userRole === 'client'">
+        <div class="section-head">
+          <strong>Your Requests</strong>
+          <span>{{ requests.length }}</span>
+        </div>
+
+        <div class="request-list" *ngIf="requests.length; else noRequest">
+          <button type="button" class="request-item" *ngFor="let request of requests" (click)="openProject(request.id)">
+            <strong>{{ request.title || 'Untitled Project' }}</strong>
+            <span>{{ request.category || request.category_name || 'General service' }}</span>
+            <small>${{ request.budgetMin ?? request.budget_min ?? 0 }} - ${{ request.budgetMax ?? request.budget_max ?? 0 }}</small>
+          </button>
+        </div>
+
+        <ng-template #noRequest>
+          <div class="empty-state compact">
+            <strong>No request published yet</strong>
+            <p>Tap the plus button above to post your first project idea.</p>
+          </div>
+        </ng-template>
+      </section>
+
+      <section class="panel-card">
+        <div class="section-head">
+          <strong>{{ userRole === 'client' ? 'Associated Freelancers' : 'Recommended Freelancers' }}</strong>
+          <span>{{ filteredFreelancers.length }}</span>
+        </div>
+
+        <div class="search-shell">
+          <input class="search" placeholder="Search freelancers" [(ngModel)]="freelancerQuery" (ngModelChange)="applyFilter()" />
+          <span class="search-glass"></span>
+        </div>
+
+        <div class="loading" *ngIf="loadingFreelancers">
+          <ion-spinner name="crescent"></ion-spinner>
+        </div>
+
+        <div class="freelancer-list" *ngIf="!loadingFreelancers">
+          <article class="freelancer-item" *ngFor="let fl of filteredFreelancers">
+            <div class="avatar-badge">{{ (fl.name || 'F').slice(0, 1) }}</div>
+            <div class="freelancer-copy">
+              <strong>{{ fl.name || 'Freelancer' }}</strong>
+              <span>{{ fl.title || 'Specialist profile' }}</span>
+              <small>{{ fl.hourlyRate || ('$' + (fl.hourly_rate || 0) + '/hr') }} . {{ fl.location || 'Remote' }}</small>
+            </div>
+            <div class="actions">
+              <button type="button" (click)="viewFreelancer(fl.id)">Profile</button>
+              <button type="button" (click)="contactFreelancer(fl.user_id)">Message</button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="quick-services" *ngIf="categoryOptions.length">
+        <button type="button" class="service-chip" *ngFor="let c of categoryOptions | slice:0:4" (click)="openService(c.slug)">
+          {{ c.label }}
+        </button>
+      </section>
+
+      <app-user-bottom-nav [role]="userRole" active="services"></app-user-bottom-nav>
+    </div>
+  </div>
+</ion-content>

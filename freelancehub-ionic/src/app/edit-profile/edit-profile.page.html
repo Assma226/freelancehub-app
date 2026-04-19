@@ -1,0 +1,229 @@
+<ion-content>
+  <div class="profile-shell">
+    <div class="phone-frame profile-frame">
+      <div class="top-bar">
+        <div class="top-left">
+          <button type="button" class="back-btn" (click)="goBack()" aria-label="Back">
+            <span></span>
+          </button>
+          <span>Edit Profile</span>
+        </div>
+        <app-account-menu></app-account-menu>
+      </div>
+
+      <section class="intro-copy">
+        <h2>Update Your Profile</h2>
+        <p>Create A Profile To Establish Yourself As A Freelancer On The AfreBay Platform.</p>
+      </section>
+
+      <section class="completion-summary">
+        <div class="completion-row">
+          <p>Profile Completion</p>
+          <button type="button" class="edit-inline" (click)="toggleSection('personal')">Edit</button>
+          <strong>{{ completion }}%</strong>
+        </div>
+        <div class="progress-track">
+          <span class="progress-fill" [style.width.%]="completion"></span>
+        </div>
+      </section>
+
+      <div class="loading" *ngIf="loading">
+        <ion-spinner name="crescent"></ion-spinner>
+      </div>
+
+      <div class="content-zone" *ngIf="!loading">
+        <div class="cards-stack">
+          <section class="action-card" [class.expanded]="activeSection === 'personal'">
+            <div class="action-card__head">
+              <h3>Add Personal Details</h3>
+              <button type="button" class="plus-btn" (click)="toggleSection('personal')" aria-label="Toggle personal details"></button>
+            </div>
+
+            <div class="card-form" *ngIf="activeSection === 'personal'">
+              <div class="avatar-wrap">
+                <div class="avatar-circle">
+                  {{ (form.firstName || user?.name || 'U').charAt(0) }}
+                </div>
+              </div>
+
+              <div class="form-stack">
+                <label>
+                  <span>First Name</span>
+                  <input [(ngModel)]="form.firstName" placeholder="Enter your First Name" />
+                </label>
+                <label>
+                  <span>Last Name</span>
+                  <input [(ngModel)]="form.lastName" placeholder="Enter your Last Name" />
+                </label>
+                <label>
+                  <span>Email Address</span>
+                  <input [(ngModel)]="form.email" placeholder="Enter your Email Address" />
+                </label>
+                <label>
+                  <span>Phone Number</span>
+                  <input [(ngModel)]="form.phone" placeholder="Enter your Phone Number" />
+                </label>
+                <label>
+                  <span>Gender</span>
+                  <input [(ngModel)]="form.gender" placeholder="Select your Gender" />
+                </label>
+                <label>
+                  <span>Legal Address</span>
+                  <input [(ngModel)]="form.address" placeholder="Enter your Legal Address" />
+                </label>
+                <label *ngIf="isFreelancer">
+                  <span>Key Skills</span>
+                  <input [(ngModel)]="form.skillsText" placeholder="Angular, UI Design, API" />
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <section class="action-card" *ngIf="isFreelancer" [class.expanded]="activeSection === 'education'">
+            <div class="action-card__head">
+              <h3>Add Education Details</h3>
+              <button type="button" class="plus-btn" (click)="toggleSection('education')" aria-label="Toggle education details"></button>
+            </div>
+
+            <div class="card-form" *ngIf="activeSection === 'education'">
+              <div class="form-stack compact">
+                <label>
+                  <span>Degree</span>
+                  <input [(ngModel)]="form.degree" placeholder="Select your Degree" />
+                </label>
+                <label>
+                  <span>Year Of Graduation</span>
+                  <input [(ngModel)]="form.graduationYear" placeholder="Enter Graduation Year" />
+                </label>
+                <label>
+                  <span>College/School/University Name</span>
+                  <input [(ngModel)]="form.school" placeholder="Enter your School" />
+                </label>
+                <label>
+                  <span>Department</span>
+                  <input [(ngModel)]="form.department" placeholder="Enter your Department" />
+                </label>
+                <label>
+                  <span>Description</span>
+                  <textarea rows="4" [(ngModel)]="form.educationDescription" placeholder="Description"></textarea>
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <section class="action-card" *ngIf="isFreelancer" [class.expanded]="activeSection === 'work'">
+            <div class="action-card__head">
+              <h3>Add Work Experience</h3>
+              <button type="button" class="plus-btn" (click)="toggleSection('work')" aria-label="Toggle work experience"></button>
+            </div>
+
+            <div class="card-form" *ngIf="activeSection === 'work'">
+              <div class="form-stack compact">
+                <label>
+                  <span>Job Title</span>
+                  <input [(ngModel)]="form.jobTitle" placeholder="Enter your Job Title" />
+                </label>
+                <label>
+                  <span>Company Name</span>
+                  <input [(ngModel)]="form.companyName" placeholder="Enter your Company Name" />
+                </label>
+                <label>
+                  <span>From Date</span>
+                  <input [(ngModel)]="form.fromDate" placeholder="dd/mm/yyyy" />
+                </label>
+                <label>
+                  <span>To Date</span>
+                  <input [(ngModel)]="form.toDate" placeholder="dd/mm/yyyy" />
+                </label>
+                <label>
+                  <span>Description</span>
+                  <textarea rows="4" [(ngModel)]="form.experienceDescription" placeholder="Description"></textarea>
+                </label>
+                <label>
+                  <span>Profile Title</span>
+                  <input [(ngModel)]="form.title" placeholder="Freelancer title" />
+                </label>
+                <label>
+                  <span>Location</span>
+                  <input [(ngModel)]="form.location" placeholder="Remote or city" />
+                </label>
+                <label>
+                  <span>Hourly Rate</span>
+                  <input type="number" [(ngModel)]="form.hourly_rate" placeholder="0" />
+                </label>
+                <label>
+                  <span>Languages</span>
+                  <input [(ngModel)]="form.languagesText" placeholder="French, English" />
+                </label>
+                <label>
+                  <span>Bio</span>
+                  <textarea rows="4" [(ngModel)]="form.bio" placeholder="Describe your profile"></textarea>
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <section class="action-card" *ngIf="isFreelancer" [class.expanded]="activeSection === 'portfolio'">
+            <div class="action-card__head">
+              <h3>Add Portfolio Projects</h3>
+              <button type="button" class="plus-btn" (click)="toggleSection('portfolio')" aria-label="Toggle portfolio details"></button>
+            </div>
+
+            <div class="card-form" *ngIf="activeSection === 'portfolio'">
+              <div class="portfolio-editor">
+                <article class="portfolio-editor__item" *ngFor="let item of portfolioItems; let i = index">
+                  <div class="portfolio-editor__head">
+                    <strong>Project {{ i + 1 }}</strong>
+                    <button type="button" class="remove-btn" (click)="removePortfolioItem(i)" aria-label="Remove portfolio item">x</button>
+                  </div>
+
+                  <div class="form-stack compact">
+                    <label>
+                      <span>Project Title</span>
+                      <input [(ngModel)]="item.title" placeholder="Portfolio project title" />
+                    </label>
+                    <label>
+                      <span>Category</span>
+                      <input [(ngModel)]="item.category" placeholder="UI Design, Web App..." />
+                    </label>
+                    <label>
+                      <span>Results / Metrics</span>
+                      <input [(ngModel)]="item.metrics" placeholder="+32% conversion, 4.9/5..." />
+                    </label>
+                    <label>
+                      <span>External Link</span>
+                      <input [(ngModel)]="item.link" placeholder="https://..." />
+                    </label>
+                    <label>
+                      <span>Cover Image URL</span>
+                      <input [(ngModel)]="item.cover_image" placeholder="https://image-url..." />
+                    </label>
+                    <label>
+                      <span>Accent Style</span>
+                      <input [(ngModel)]="item.accent" placeholder="berry, navy or gold" />
+                    </label>
+                    <label>
+                      <span>Summary</span>
+                      <textarea rows="4" [(ngModel)]="item.summary" placeholder="Describe this portfolio project"></textarea>
+                    </label>
+                  </div>
+                </article>
+
+                <button type="button" class="add-row-btn" (click)="addPortfolioItem()">Add another project</button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="save-zone" *ngIf="activeSection">
+          <p class="message" *ngIf="message">{{ message }}</p>
+          <ion-button expand="block" class="submit-btn" (click)="saveProfile()" [disabled]="saving">
+            {{ saving ? 'Saving...' : 'Submit' }}
+          </ion-button>
+        </div>
+
+        <app-user-bottom-nav [role]="user?.role || null" active="profile"></app-user-bottom-nav>
+      </div>
+    </div>
+  </div>
+</ion-content>

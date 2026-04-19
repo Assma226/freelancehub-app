@@ -1,0 +1,151 @@
+<ion-content>
+  <div class="profile-shell">
+    <section class="top-bar">
+      <div>
+        <strong>TalentHub</strong>
+        <span>Profil freelance</span>
+      </div>
+      <div class="top-bar-actions">
+        <small>{{ userRole === 'client' ? 'Espace client' : 'Espace membre' }}</small>
+        <app-account-menu></app-account-menu>
+      </div>
+    </section>
+
+    <section class="profile-hero" *ngIf="!loading && freelancer">
+      <div class="avatar">{{ (freelancer.name || 'F').charAt(0) }}</div>
+      <div class="hero-copy">
+        <span class="hero-pill">Freelancer</span>
+        <h1>{{ freelancer.name || 'Freelancer' }}</h1>
+        <p>{{ freelancer.title || 'Profil freelance' }}</p>
+        <small>{{ freelancer.location || 'Remote' }} - {{ freelancer.hourlyRate || ('$' + (freelancer.hourly_rate || 0) + '/hr') }}</small>
+        <div class="hero-actions">
+          <button type="button" class="portfolio-link-btn" (click)="openPortfolio()">Voir le portfolio</button>
+          <button type="button" class="favorite-btn" *ngIf="userRole === 'client'" [class.active]="isFavorite" (click)="toggleFavorite()">
+            {{ isFavorite ? 'Retire des favoris' : 'Ajouter aux favoris' }}
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <div class="loading" *ngIf="loading">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+
+    <section class="panel-card stats-card" *ngIf="!loading && freelancer">
+      <div class="stat-item" *ngFor="let stat of stats">
+        <strong>{{ stat.value }}</strong>
+        <span>{{ stat.label }}</span>
+      </div>
+    </section>
+
+    <section class="panel-card" *ngIf="!loading && freelancer">
+      <div class="section-head">
+        <h2>A propos</h2>
+        <span class="muted">Disponible</span>
+      </div>
+      <p class="bio">{{ freelancer.bio || 'Aucune biographie renseignee.' }}</p>
+    </section>
+
+    <section class="panel-card" *ngIf="!loading && freelancer">
+      <div class="section-head">
+        <h2>Competences</h2>
+        <span class="muted">{{ (freelancer.skills || []).length }} tags</span>
+      </div>
+      <div class="skills" *ngIf="(freelancer.skills || []).length; else noSkills">
+        <span *ngFor="let skill of freelancer.skills || []">{{ skill }}</span>
+      </div>
+      <ng-template #noSkills>
+        <p class="empty">Ce freelancer n'a pas encore ajoute de competences.</p>
+      </ng-template>
+    </section>
+
+    <section class="panel-card" *ngIf="!loading && freelancer" id="freelancer-portfolio">
+      <div class="section-head">
+        <h2>Portfolio</h2>
+        <span class="muted">{{ portfolioItems.length }} projets</span>
+      </div>
+      <div class="portfolio-row" *ngIf="portfolioItems.length; else noPortfolio">
+        <article class="portfolio-card" *ngFor="let item of portfolioItems" [ngClass]="item.accentClass">
+          <div
+            class="portfolio-visual"
+            [class.portfolio-visual--image]="!!item.coverStyle"
+            [style.background-image]="item.coverStyle">
+          </div>
+          <div class="portfolio-copy">
+            <span class="portfolio-badge">{{ item.category }}</span>
+            <strong>{{ item.title }}</strong>
+            <p>{{ item.summary }}</p>
+            <small>{{ item.metrics }}</small>
+            <a *ngIf="item.link" class="portfolio-link" [href]="item.link" target="_blank" rel="noreferrer">Open project</a>
+          </div>
+        </article>
+      </div>
+      <ng-template #noPortfolio>
+        <p class="empty">Aucun projet portfolio renseigne pour le moment.</p>
+      </ng-template>
+    </section>
+
+    <section class="panel-card" *ngIf="!loading && freelancer">
+      <div class="section-head">
+        <h2>Notes et avis</h2>
+        <span class="muted">{{ displayedReviewCount }} avis</span>
+      </div>
+      <div class="rating-summary">
+        <strong>{{ displayedRating ? (displayedRating + '/5') : 'Pas encore note' }}</strong>
+        <div class="star-row">
+          <span class="star filled" *ngFor="let _ of stars(roundedDisplayedRating)">★</span>
+          <span class="star" *ngFor="let _ of stars(5 - roundedDisplayedRating)">★</span>
+        </div>
+      </div>
+      <div class="review-list" *ngIf="reviewItems.length; else noReviews">
+        <article class="review-item" *ngFor="let review of reviewItems">
+          <div class="review-head">
+            <strong>{{ review.name }}</strong>
+            <span>{{ review.project }}</span>
+          </div>
+          <div class="star-row compact">
+            <span class="star filled" *ngFor="let _ of stars(review.rating)">★</span>
+            <span class="star" *ngFor="let _ of stars(5 - review.rating)">★</span>
+          </div>
+          <p class="review-text">{{ review.comment }}</p>
+        </article>
+      </div>
+      <ng-template #noReviews>
+        <p class="empty">Aucun avis pour le moment.</p>
+      </ng-template>
+    </section>
+
+    <section class="panel-card action-card" *ngIf="!loading && freelancer && userRole === 'client'">
+      <div>
+        <h2>Noter ce freelancer</h2>
+        <p>Ajoutez une note rapide et un commentaire pour aider les prochains clients.</p>
+      </div>
+      <div class="rating-picker">
+        <button
+          type="button"
+          class="rate-btn"
+          *ngFor="let value of stars(5)"
+          [class.active]="value <= selectedRating"
+          (click)="selectRating(value)">
+          ★
+        </button>
+      </div>
+      <label class="review-form">
+        <span>Commentaire</span>
+        <textarea rows="4" [(ngModel)]="reviewComment" placeholder="Comment s'est passe votre collaboration ?"></textarea>
+      </label>
+      <p class="review-message" *ngIf="reviewMessage">{{ reviewMessage }}</p>
+      <ion-button expand="block" (click)="submitReview()">Publier l'avis</ion-button>
+    </section>
+
+    <section class="panel-card action-card" *ngIf="!loading && freelancer && userRole === 'client'">
+      <div>
+        <h2>Entrer en contact</h2>
+        <p>Ouvrez une discussion avec ce freelancer tout en gardant le meme univers TalentHub.</p>
+      </div>
+      <ion-button expand="block" (click)="messageFreelancer()">Contacter ce freelancer</ion-button>
+    </section>
+
+    <app-user-bottom-nav [role]="userRole" active="services"></app-user-bottom-nav>
+  </div>
+</ion-content>
