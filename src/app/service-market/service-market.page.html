@@ -28,11 +28,14 @@
           <ion-button expand="block" class="cta-primary" *ngIf="isClient" (click)="ideaOpen = !ideaOpen">
             {{ ideaOpen ? 'Fermer l idee' : 'Proposer une idee de projet' }}
           </ion-button>
-          <ion-button expand="block" class="cta-primary" *ngIf="!isClient && projects[0]" (click)="openProject(projects[0].id)">
+          <ion-button expand="block" class="cta-primary" *ngIf="isAuthenticated && !isClient && projects[0]" (click)="openProject(projects[0].id)">
             Faire une candidature
           </ion-button>
+          <ion-button expand="block" class="cta-primary" *ngIf="!isAuthenticated" (click)="contactFreelancer()">
+            Se connecter pour continuer
+          </ion-button>
           <ion-button expand="block" fill="outline" class="cta-secondary" (click)="goToCreateRequest()">
-            {{ isClient ? 'Voir mes demandes' : 'Voir mes propositions' }}
+            {{ isAuthenticated ? (isClient ? 'Voir mes demandes' : 'Voir mes propositions') : 'Creer un compte' }}
           </ion-button>
         </div>
       </div>
@@ -150,13 +153,14 @@
               <div class="card-actions">
                 <button type="button" class="secondary-btn" (click)="openFreelancer(fl.id)">Profil</button>
                 <button type="button" class="primary-btn" *ngIf="isClient" (click)="contactFreelancer(fl.user_id)">Contacter</button>
+                <button type="button" class="primary-btn" *ngIf="!isAuthenticated" (click)="contactFreelancer(fl.user_id)">Se connecter</button>
               </div>
             </article>
             <p class="empty" *ngIf="!filteredFreelancers.length">Aucun freelancer ne correspond a cette recherche.</p>
           </div>
         </section>
 
-        <app-user-bottom-nav [role]="user?.role || null" active="services"></app-user-bottom-nav>
+        <app-user-bottom-nav *ngIf="isAuthenticated" [role]="user?.role || null" active="services"></app-user-bottom-nav>
       </div>
     </div>
   </div>

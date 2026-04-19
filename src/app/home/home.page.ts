@@ -5,7 +5,7 @@ import { IonButton, IonContent, IonSpinner } from '@ionic/angular/standalone';
 import { apiAuthHeaders, apiUrl, getSessionUser } from '../shared/api-url';
 import { CategoriesListDto, ProjectsListDto, ProjectDocumentDto, CategoryDto, NotificationsListDto, ConversationsListDto } from '../shared/api.dto';
 import { AccountMenuComponent } from '../shared/account-menu.component';
-import { categorySymbol } from '../shared/service-ui';
+import { categorySymbol, resolveProjectCategorySlug } from '../shared/service-ui';
 import { UserBottomNavComponent } from '../shared/user-bottom-nav.component';
 
 @Component({
@@ -102,5 +102,9 @@ export class HomePage implements OnInit {
 
   categorySymbol(category: CategoryDto) {
     return categorySymbol(category);
+  }
+
+  projectCategorySlug(project: ProjectDocumentDto): string | null {
+    return resolveProjectCategorySlug(project, this.categories);
   }
 }

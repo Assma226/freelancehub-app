@@ -205,6 +205,12 @@ export interface ConversationDto {
   last_message?: string;
   last_message_at?: string;
   unread_count?: number;
+  other_user_id?: string;
+  other_user_name?: string;
+  other_user_role?: 'client' | 'freelancer' | string;
+  other_user_avatar?: string;
+  other_user_phone?: string;
+  other_user_email?: string;
 }
 
 export interface ConversationsListDto {
@@ -220,6 +226,7 @@ export interface MessageDto {
 }
 
 export interface MessagesThreadDto {
+  conversation?: ConversationDto;
   messages: MessageDto[];
   total: number;
 }

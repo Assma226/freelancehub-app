@@ -473,6 +473,13 @@ h1 {
   width: fit-content;
 }
 
+.project-tag.category-link {
+  border: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .project-card strong {
   color: #1f2937;
   font-size: 14px;

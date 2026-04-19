@@ -42,7 +42,16 @@
               <div class="service-body">
                 <span class="badge">Nouveau</span>
                 <strong>{{ project.title || 'Projet' }}</strong>
-                <small>{{ project.category || project.category_name || 'Categorie' }}</small>
+                <button
+                  type="button"
+                  class="category-link"
+                  *ngIf="projectCategorySlug(project) as categorySlug; else welcomeCategoryLabel"
+                  (click)="openService(categorySlug)">
+                  {{ project.category || project.category_name || 'Categorie' }}
+                </button>
+                <ng-template #welcomeCategoryLabel>
+                  <small>{{ project.category || project.category_name || 'Categorie' }}</small>
+                </ng-template>
                 <div class="service-meta">
                   <span>{{ project.applicants ?? project.applicants_count ?? 0 }} cand.</span>
                   <span>4.6</span>

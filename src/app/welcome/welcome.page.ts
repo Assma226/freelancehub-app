@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { IonButton, IonContent, IonSpinner } from '@ionic/angular/standalone';
 import { apiUrl, getStoredToken } from '../shared/api-url';
 import { CategoriesListDto, CategoryDto, ProjectDocumentDto, ProjectsListDto } from '../shared/api.dto';
-import { categorySymbol } from '../shared/service-ui';
+import { categorySymbol, resolveProjectCategorySlug } from '../shared/service-ui';
 
 @Component({
   selector: 'app-welcome',
@@ -71,5 +71,9 @@ export class WelcomePage implements OnInit {
 
   categorySymbol(category: CategoryDto): string {
     return categorySymbol(category);
+  }
+
+  projectCategorySlug(project: ProjectDocumentDto): string | null {
+    return resolveProjectCategorySlug(project, this.categories);
   }
 }

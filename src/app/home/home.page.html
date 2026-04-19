@@ -77,7 +77,16 @@
             <article class="project-card" *ngFor="let project of projects" (click)="openProject(project.id)">
               <div class="project-cover"></div>
               <div class="project-body">
-                <span class="project-tag">{{ project.category || project.category_name || 'Categorie' }}</span>
+                <button
+                  type="button"
+                  class="project-tag category-link"
+                  *ngIf="projectCategorySlug(project) as categorySlug; else homeCategoryLabel"
+                  (click)="$event.stopPropagation(); openService(categorySlug)">
+                  {{ project.category || project.category_name || 'Categorie' }}
+                </button>
+                <ng-template #homeCategoryLabel>
+                  <span class="project-tag">{{ project.category || project.category_name || 'Categorie' }}</span>
+                </ng-template>
                 <strong>{{ project.title }}</strong>
                 <p>{{ project.description || 'Projet sans description.' }}</p>
                 <div class="meta">

@@ -13,7 +13,7 @@ import {
 } from '../shared/api.dto';
 import { apiAuthHeaders, apiUrl, getSessionUser } from '../shared/api-url';
 import { AccountMenuComponent } from '../shared/account-menu.component';
-import { categorySymbol, matchesCategoryForFreelancer } from '../shared/service-ui';
+import { categorySymbol } from '../shared/service-ui';
 import { UserBottomNavComponent } from '../shared/user-bottom-nav.component';
 
 @Component({
@@ -27,6 +27,7 @@ export class ServiceMarketPage implements OnInit {
   user = getSessionUser();
   loading = true;
   category: CategoryDto | null = null;
+  currentSlug = 'all';
   projects: ProjectDocumentDto[] = [];
   freelancers: FreelancerProfileDto[] = [];
   filteredFreelancers: FreelancerProfileDto[] = [];
@@ -52,12 +53,19 @@ export class ServiceMarketPage implements OnInit {
   constructor(private route: ActivatedRoute, private router: Router) {}
 
   async ngOnInit() {
-    const slug = this.route.snapshot.paramMap.get('slug') || 'all';
-    await this.loadMarket(slug);
+    this.route.paramMap.subscribe(params => {
+      const slug = params.get('slug') || 'all';
+      this.currentSlug = slug;
+      void this.loadMarket(slug);
+    });
   }
 
   get isClient() {
     return this.user?.role === 'client';
+  }
+
+  get isAuthenticated() {
+    return Boolean(this.user);
   }
 
   get pageTitle() {
@@ -120,16 +128,7 @@ export class ServiceMarketPage implements OnInit {
       }
 
       this.freelancers = freelancers;
-
-      this.filteredFreelancers = slug === 'all'
-        ? [...this.freelancers]
-        : this.freelancers.filter(freelancer =>
-            matchesCategoryForFreelancer(freelancer, this.category?.slug || slug, this.category?.name || slug),
-          );
-
-      if (!this.filteredFreelancers.length && !this.hasActiveFilters) {
-        this.filteredFreelancers = [...this.freelancers];
-      }
+      this.filteredFreelancers = [...this.freelancers];
     } finally {
       this.loading = false;
     }
@@ -161,7 +160,7 @@ export class ServiceMarketPage implements OnInit {
   }
 
   goHome() {
-    void this.router.navigate(['/home']);
+    void this.router.navigate([this.isAuthenticated ? '/home' : '/welcome']);
   }
 
   openProject(id: string) {
@@ -174,6 +173,10 @@ export class ServiceMarketPage implements OnInit {
   }
 
   contactFreelancer(userId?: string) {
+    if (!this.isAuthenticated) {
+      void this.router.navigate(['/auth'], { queryParams: { mode: 'login' } });
+      return;
+    }
     if (!userId) return;
     void this.router.navigate(['/messages'], { queryParams: { with: userId } });
   }
@@ -201,12 +204,15 @@ export class ServiceMarketPage implements OnInit {
   }
 
   goToCreateRequest() {
+    if (!this.isAuthenticated) {
+      void this.router.navigate(['/auth'], { queryParams: { mode: 'register' } });
+      return;
+    }
     void this.router.navigate(['/client-request']);
   }
 
   async applyFilters() {
-    const slug = this.route.snapshot.paramMap.get('slug') || 'all';
-    await this.loadMarket(slug);
+    await this.loadMarket(this.currentSlug);
   }
 
   async resetFilters() {
@@ -219,7 +225,6 @@ export class ServiceMarketPage implements OnInit {
       minRating: 0,
       availableOnly: false,
     };
-    const slug = this.route.snapshot.paramMap.get('slug') || 'all';
-    await this.loadMarket(slug);
+    await this.loadMarket(this.currentSlug);
   }
 }

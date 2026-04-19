@@ -1,4 +1,4 @@
-import { CategoryDto, FreelancerProfileDto } from './api.dto';
+import { CategoryDto, FreelancerProfileDto, ProjectDocumentDto } from './api.dto';
 
 export function categorySymbol(category?: Pick<CategoryDto, 'slug' | 'name'> | null): string {
   const source = `${category?.slug || ''} ${category?.name || ''}`.toLowerCase();
@@ -29,4 +29,39 @@ export function matchesCategoryForFreelancer(
   const normalizedName = categoryName.toLowerCase();
 
   return haystack.includes(normalizedSlug) || haystack.includes(normalizedName);
+}
+
+function normalizeCategoryValue(value?: string | null): string {
+  return (value || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ');
+}
+
+export function resolveProjectCategorySlug(
+  project: Pick<ProjectDocumentDto, 'category' | 'category_name' | 'category_slug'>,
+  categories: Pick<CategoryDto, 'slug' | 'name'>[],
+): string | null {
+  const directSlug = project.category_slug || project.category;
+  if (directSlug && categories.some(category => category.slug === directSlug)) {
+    return directSlug;
+  }
+
+  const candidates = [
+    normalizeCategoryValue(project.category_slug),
+    normalizeCategoryValue(project.category),
+    normalizeCategoryValue(project.category_name),
+  ].filter(Boolean);
+
+  if (!candidates.length) return null;
+
+  const matchedCategory = categories.find(category => {
+    const normalizedSlug = normalizeCategoryValue(category.slug);
+    const normalizedName = normalizeCategoryValue(category.name);
+
+    return candidates.some(candidate => candidate === normalizedSlug || candidate === normalizedName);
+  });
+
+  return matchedCategory?.slug || null;
 }

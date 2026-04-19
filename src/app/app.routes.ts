@@ -65,7 +65,6 @@ export const routes: Routes = [
   {
     path: 'service-market/:slug',
     loadComponent: () => import('./service-market/service-market.page').then(m => m.ServiceMarketPage),
-    canActivate: [authGuard],
   },
   {
     path: '**',
