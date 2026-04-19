@@ -18,6 +18,44 @@ from datetime            import datetime, timezone
 messages_bp = Blueprint('messages', __name__)
 
 
+def _serialize_conversation(doc, uid: ObjectId):
+    c = dict(doc)
+    c['id'] = str(c.pop('_id'))
+    participants = c.get('participants', [])
+    c['participants'] = [str(p) for p in participants]
+
+    other_participant = next((participant for participant in participants if participant != uid), None)
+    if other_participant:
+        user = mongo.db.users.find_one(
+            {'_id': other_participant},
+            {'name': 1, 'role': 1, 'avatar': 1, 'phone': 1, 'email': 1},
+        )
+        if user:
+            c['other_user_id'] = str(other_participant)
+            c['other_user_name'] = user.get('name', '')
+            c['other_user_role'] = user.get('role', '')
+            c['other_user_avatar'] = user.get('avatar', '')
+            c['other_user_phone'] = user.get('phone', '')
+            c['other_user_email'] = user.get('email', '')
+
+    last_msg = mongo.db.messages.find_one(
+        {'conversation_id': ObjectId(c['id'])},
+        sort=[('created_at', -1)]
+    )
+    if last_msg:
+        body = last_msg.get('text') or last_msg.get('content', '')
+        c['last_message'] = body
+        c['last_message_at'] = last_msg.get('created_at')
+
+    c['unread_count'] = mongo.db.messages.count_documents({
+        'conversation_id': ObjectId(c['id']),
+        'sender_id': {'$ne': uid},
+        'is_read': False,
+    })
+
+    return c
+
+
 # ── GET /api/messages  — toutes les conversations ────────────────────────
 @messages_bp.route('', methods=['GET'])
 @token_required
@@ -32,29 +70,7 @@ def list_conversations():
 
     convs.sort(key=_conv_sort_key, reverse=True)
 
-    result = []
-    for c in convs:
-        c['id'] = str(c.pop('_id'))
-        c['participants'] = [str(p) for p in c.get('participants', [])]
-
-        # Dernier message
-        last_msg = mongo.db.messages.find_one(
-            {'conversation_id': ObjectId(c['id'])},
-            sort=[('created_at', -1)]
-        )
-        if last_msg:
-            body = last_msg.get('text') or last_msg.get('content', '')
-            c['last_message']    = body
-            c['last_message_at'] = last_msg.get('created_at')
-
-        # Unread count
-        c['unread_count'] = mongo.db.messages.count_documents({
-            'conversation_id': ObjectId(c['id']),
-            'sender_id':       {'$ne': uid},
-            'is_read':         False,
-        })
-
-        result.append(c)
+    result = [_serialize_conversation(c, uid) for c in convs]
 
     return jsonify({'conversations': result})
 
@@ -100,7 +116,11 @@ def get_messages(conv_id: str):
         {'$set': {'is_read': True}}
     )
 
-    return jsonify({'messages': msgs, 'total': len(msgs)})
+    return jsonify({
+        'conversation': _serialize_conversation(conv, uid),
+        'messages': msgs,
+        'total': len(msgs),
+    })
 
 
 # ── POST /api/messages/<conv_id>  — envoyer un message ───────────────────
