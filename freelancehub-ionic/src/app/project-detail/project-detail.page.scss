@@ -105,7 +105,8 @@ label {
 }
 
 input,
-textarea {
+textarea,
+select {
   width: 100%;
   box-sizing: border-box;
   border-radius: 14px;
@@ -116,6 +117,10 @@ textarea {
 
 .error {
   color: #b42318;
+}
+
+.success {
+  color: #157347;
 }
 
 .status-card,
@@ -184,7 +189,8 @@ textarea {
 .contract-summary article,
 .contract-terms,
 .contract-editor,
-.contract-sign {
+.contract-sign,
+.payment-editor {
   padding: 14px;
   border-radius: 16px;
   background: #faf7f8;
@@ -200,9 +206,77 @@ textarea {
 
 .contract-summary span,
 .contract-terms p,
-.contract-sign p {
+.contract-sign p,
+.payment-editor p {
   color: #5d6880;
   font-size: 11px;
+}
+
+.payment-flow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.payment-flow article {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid #ece1e5;
+  background: #faf7f8;
+}
+
+.payment-flow article.active {
+  border-color: #8f1735;
+  background: #fff1f5;
+}
+
+.payment-flow strong {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 50%;
+  background: #8f1735;
+  color: #fff;
+  font-size: 12px;
+}
+
+.payment-flow span {
+  color: #313849;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.payment-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.payment-summary span {
+  padding: 10px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #ece1e5;
+}
+
+.payment-summary small,
+.payment-summary strong {
+  display: block;
+}
+
+.payment-summary small {
+  color: #5d6880;
+  font-size: 10px;
+}
+
+.payment-summary strong {
+  margin-top: 4px;
+  color: #8f1735;
+  font-size: 15px;
 }
 
 .progress-stats strong,

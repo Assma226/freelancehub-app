@@ -107,3 +107,15 @@ def freelancer_only(fn):
             return jsonify({'error': 'Accès réservé aux freelancers'}), 403
         return fn(*args, **kwargs)
     return wrapper
+
+
+def admin_only(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        ident = _ensure_identity()
+        if not ident:
+            return jsonify({'error': 'Authentification requise'}), 401
+        if ident.get('role') != 'admin':
+            return jsonify({'error': 'Acces reserve aux administrateurs'}), 403
+        return fn(*args, **kwargs)
+    return wrapper

@@ -70,12 +70,14 @@
             </div>
           </div>
           <div class="thread-actions" *ngIf="activeConversation">
-            <button type="button" class="call-btn" (click)="startCall()">Call</button>
             <span>{{ messages.length }} msg</span>
           </div>
         </div>
 
-        <p class="call-feedback" *ngIf="callFeedback">{{ callFeedback }}</p>
+        <div class="security-note">
+          <strong>{{ securityRoleLabel() }}</strong>
+          <span>Email, telephone, reseaux sociaux et liens externes sont bloques avant envoi.</span>
+        </div>
 
         <div class="message-list" *ngIf="messages.length; else noMessage">
           <article class="message-bubble" *ngFor="let msg of messages" [class.mine]="isMine(msg)">
@@ -89,6 +91,11 @@
             <p>Select a thread or send the first message.</p>
           </div>
         </ng-template>
+
+        <p class="call-feedback error-feedback" *ngIf="composerError">
+          {{ composerError }}
+          <span *ngIf="piiTypes.length">Types detectes: {{ piiLabel(piiTypes) }}</span>
+        </p>
 
         <div class="composer">
           <input [(ngModel)]="draft" (keydown.enter)="sendMessage()" placeholder="Write your messages..." />

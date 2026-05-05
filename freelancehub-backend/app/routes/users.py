@@ -5,6 +5,7 @@ from app                import mongo
 from app.middleware.auth import token_required, freelancer_only, client_only, _get_identity
 from bson               import ObjectId
 from datetime           import datetime, timezone
+import os
 import bcrypt
 import re
 import json
@@ -182,6 +183,56 @@ def login():
             'freelancer': freelancer_profile,
         }
     })
+
+
+@auth_bp.route('/bootstrap-admin', methods=['POST'])
+def bootstrap_admin():
+    if mongo.db.users.count_documents({'role': 'admin'}) > 0:
+        return jsonify({'error': 'Un administrateur existe deja'}), 409
+
+    data = request.get_json() or {}
+    expected_key = os.getenv('ADMIN_BOOTSTRAP_KEY', '').strip()
+    provided_key = (data.get('bootstrap_key') or '').strip()
+    if expected_key and provided_key != expected_key:
+        return jsonify({'error': 'Cle bootstrap invalide'}), 403
+
+    email = (data.get('email') or '').strip().lower()
+    password = data.get('password') or ''
+    name = (data.get('name') or 'Administrateur').strip()
+    if not email or not _is_valid_email(email):
+        return jsonify({'error': 'Email admin invalide'}), 400
+    if len(password) < 8:
+        return jsonify({'error': 'Mot de passe admin trop court (min 8 caracteres)'}), 400
+    if mongo.db.users.find_one({'email': email}):
+        return jsonify({'error': 'Email deja utilise'}), 409
+
+    now = datetime.now(timezone.utc)
+    result = mongo.db.users.insert_one({
+        'name': name,
+        'email': email,
+        'password': _hash_password(password),
+        'role': 'admin',
+        'avatar': data.get('avatar', ''),
+        'is_active': True,
+        'created_at': now,
+        'updated_at': now,
+    })
+
+    identity_dict = {'id': str(result.inserted_id), 'role': 'admin', 'email': email}
+    access_token = create_access_token(identity=json.dumps(identity_dict))
+    refresh_token = create_refresh_token(identity=json.dumps(identity_dict))
+    return jsonify({
+        'message': 'Administrateur cree',
+        'access_token': access_token,
+        'token': access_token,
+        'refresh_token': refresh_token,
+        'user': {
+            'id': str(result.inserted_id),
+            'name': name,
+            'email': email,
+            'role': 'admin',
+        },
+    }), 201
 
 
 @auth_bp.route('/refresh', methods=['POST'])

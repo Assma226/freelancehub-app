@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { IonButton, IonContent } from '@ionic/angular/standalone';
-import { apiUrl, clearSession, storeSession } from '../shared/api-url';
+import { apiBaseUrl, apiUrl, clearSession, storeSession } from '../shared/api-url';
 import { ApiErrorBody, AuthLoginResponse } from '../shared/api.dto';
 
 @Component({
@@ -102,16 +102,28 @@ export class AuthPage implements OnInit {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      const data = await res.json() as AuthLoginResponse | ApiErrorBody;
+
+      const contentType = res.headers.get('content-type') || '';
+      const isJson = contentType.includes('application/json');
+      const data = isJson
+        ? await res.json() as AuthLoginResponse | ApiErrorBody
+        : null;
+
       if (!res.ok) {
-        this.error = (data as ApiErrorBody).error || 'Une erreur est survenue.';
+        this.error = (data as ApiErrorBody | null)?.error || `Erreur backend (${res.status}).`;
         return;
       }
+
+      if (!data) {
+        this.error = 'Reponse invalide du backend.';
+        return;
+      }
+
       const auth = data as AuthLoginResponse;
       storeSession(auth.token || auth.access_token, auth.user);
-      await this.router.navigate(['/home']);
+      await this.router.navigate([auth.user.role === 'admin' ? '/admin' : '/home']);
     } catch {
-      this.error = 'Impossible de joindre le backend. Verifiez que Flask tourne sur http://127.0.0.1:5000.';
+      this.error = `Impossible de joindre le backend. Verifiez que Flask tourne sur ${apiBaseUrl()}.`;
     } finally {
       this.loading = false;
     }

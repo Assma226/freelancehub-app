@@ -11,11 +11,27 @@
 from flask               import Blueprint, request, jsonify
 from app                 import mongo
 from app.middleware.auth import token_required, _get_identity
+from app.services.pii_service import analyze_message, pii_error_response
 from app.utils.notifications import create_notification
 from bson                import ObjectId
 from datetime            import datetime, timezone
 
 messages_bp = Blueprint('messages', __name__)
+
+
+def _message_text(data: dict, *keys: str) -> str:
+    for key in keys:
+        value = data.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return ''
+
+
+def _pii_block_response(text: str):
+    pii_analysis = analyze_message(text)
+    if pii_analysis.get('contains_pii'):
+        return jsonify(pii_error_response(pii_analysis)), 400
+    return None
 
 
 def _serialize_conversation(doc, uid: ObjectId):
@@ -28,15 +44,13 @@ def _serialize_conversation(doc, uid: ObjectId):
     if other_participant:
         user = mongo.db.users.find_one(
             {'_id': other_participant},
-            {'name': 1, 'role': 1, 'avatar': 1, 'phone': 1, 'email': 1},
+            {'name': 1, 'role': 1, 'avatar': 1},
         )
         if user:
             c['other_user_id'] = str(other_participant)
             c['other_user_name'] = user.get('name', '')
             c['other_user_role'] = user.get('role', '')
             c['other_user_avatar'] = user.get('avatar', '')
-            c['other_user_phone'] = user.get('phone', '')
-            c['other_user_email'] = user.get('email', '')
 
     last_msg = mongo.db.messages.find_one(
         {'conversation_id': ObjectId(c['id'])},
@@ -129,11 +143,15 @@ def get_messages(conv_id: str):
 def send_message(conv_id: str):
     identity = _get_identity()
     uid      = ObjectId(identity['id'])
-    data     = request.get_json()
-    text     = data.get('text', '').strip()
+    data     = request.get_json() or {}
+    text     = _message_text(data, 'text', 'content', 'message')
 
     if not text:
         return jsonify({'error': 'Message vide'}), 400
+
+    pii_block = _pii_block_response(text)
+    if pii_block:
+        return pii_block
 
     try:
         conv_oid = ObjectId(conv_id)
@@ -148,7 +166,10 @@ def send_message(conv_id: str):
     msg = {
         'conversation_id': conv_oid,
         'sender_id':       uid,
+        'sender_role':     identity.get('role', ''),
         'text':            text,
+        'content':         text,
+        'pii_checked':     True,
         'is_read':         False,
         'created_at':      now,
     }
@@ -181,12 +202,17 @@ def send_message(conv_id: str):
 def new_conversation():
     identity     = _get_identity()
     uid          = ObjectId(identity['id'])
-    data         = request.get_json()
+    data         = request.get_json() or {}
     recipient_id = data.get('recipient_id')
-    first_msg    = data.get('message', '').strip()
+    first_msg    = _message_text(data, 'message', 'text', 'content')
 
     if not recipient_id:
         return jsonify({'error': 'recipient_id requis'}), 400
+
+    if first_msg:
+        pii_block = _pii_block_response(first_msg)
+        if pii_block:
+            return pii_block
 
     try:
         rid = ObjectId(recipient_id)
@@ -215,7 +241,10 @@ def new_conversation():
         mongo.db.messages.insert_one({
             'conversation_id': conv_id,
             'sender_id':       uid,
+            'sender_role':     identity.get('role', ''),
             'text':            first_msg,
+            'content':         first_msg,
+            'pii_checked':     True,
             'is_read':         False,
             'created_at':      now,
         })
