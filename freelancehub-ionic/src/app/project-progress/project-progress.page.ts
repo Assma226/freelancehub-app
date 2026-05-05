@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { IonContent, IonSpinner } from '@ionic/angular/standalone';
 import { ProjectDocumentDto, ProjectsListDto } from '../shared/api.dto';
 import { apiAuthHeaders, apiUrl, getSessionUser } from '../shared/api-url';
@@ -23,6 +23,7 @@ export class ProjectProgressPage implements OnInit {
   error = '';
   projects: ProjectDocumentDto[] = [];
   selectedProjectId = '';
+  requestedProjectId = '';
   form = {
     title: '',
     summary: '',
@@ -34,9 +35,10 @@ export class ProjectProgressPage implements OnInit {
     health: 'on-track',
   };
 
-  constructor(private router: Router) {}
+  constructor(private route: ActivatedRoute, private router: Router) {}
 
   async ngOnInit() {
+    this.requestedProjectId = this.route.snapshot.queryParamMap.get('project') || '';
     await this.loadTracking();
   }
 
@@ -46,6 +48,18 @@ export class ProjectProgressPage implements OnInit {
 
   get progressEntries() {
     return this.selectedProject?.progress_entries || [];
+  }
+
+  get canAddProgress() {
+    return this.role === 'freelancer' && this.selectedProject?.status === 'in-progress' && this.selectedProject?.escrow_status === 'funded';
+  }
+
+  get paymentStateMessage() {
+    if (!this.selectedProject) return '';
+    if (this.selectedProject.escrow_status === 'funded') return 'Argent bloque en escrow. Le journal d avancement est disponible.';
+    if (this.selectedProject.escrow_status === 'released') return 'Paiement libere. La mission est terminee cote paiement.';
+    if (this.selectedProject.escrow_status === 'refunded') return 'Paiement rembourse. Le journal est ferme.';
+    return 'Le client doit payer en escrow avant que vous puissiez ajouter un avancement.';
   }
 
   async loadTracking() {
@@ -59,13 +73,30 @@ export class ProjectProgressPage implements OnInit {
       }
       const data = await res.json() as ProjectsListDto;
       this.projects = data.projects || [];
-      if (!this.selectedProjectId && this.projects.length) {
+      if (this.requestedProjectId && this.projects.some(project => project.id === this.requestedProjectId)) {
+        this.selectedProjectId = this.requestedProjectId;
+      } else if (!this.selectedProjectId && this.projects.length) {
         this.selectedProjectId = this.projects[0].id;
+      }
+
+      if (this.requestedProjectId && !this.projects.length) {
+        await this.loadRequestedProject();
+      } else if (this.requestedProjectId && !this.projects.some(project => project.id === this.requestedProjectId)) {
+        await this.loadRequestedProject();
       }
       this.syncFormWithProject();
     } finally {
       this.loading = false;
     }
+  }
+
+  async loadRequestedProject() {
+    if (!this.requestedProjectId) return;
+    const res = await fetch(apiUrl(`/api/projects/${this.requestedProjectId}`), { headers: apiAuthHeaders(false) });
+    if (!res.ok) return;
+    const project = await res.json() as ProjectDocumentDto;
+    this.projects = [project, ...this.projects.filter(item => item.id !== project.id)];
+    this.selectedProjectId = project.id;
   }
 
   selectProject(id: string) {
@@ -80,7 +111,7 @@ export class ProjectProgressPage implements OnInit {
   }
 
   async submitProgress() {
-    if (!this.selectedProject?.id) return;
+    if (!this.selectedProject?.id || !this.canAddProgress) return;
     this.saving = true;
     this.error = '';
     try {

@@ -1,0 +1,131 @@
+<ion-content>
+  <div class="payments-shell">
+    <div class="payments-frame">
+      <header class="top">
+        <button type="button" class="back" (click)="back()">&lt;</button>
+        <div>
+          <strong>{{ user?.role === 'freelancer' ? 'Portefeuille' : 'Paiements' }}</strong>
+          <small>{{ user?.role === 'admin' ? 'Console admin' : user?.role === 'client' ? 'Espace client' : 'Solde, escrow et retraits' }}</small>
+        </div>
+        <app-account-menu></app-account-menu>
+      </header>
+
+      <p class="error" *ngIf="error">{{ error }}</p>
+      <p class="success" *ngIf="success">{{ success }}</p>
+
+      <section class="balance-card" *ngIf="!loading">
+        <small>{{ user?.role === 'client' ? 'Total paye' : user?.role === 'admin' ? 'Revenus plateforme' : 'Solde disponible' }}</small>
+        <h1>
+          {{ user?.role === 'client' ? money(stats['paid_total']) : user?.role === 'admin' ? money(stats['platform_revenue']) : money(stats['available'] || stats['available_balance']) }}
+        </h1>
+        <span>{{ user?.role === 'client' ? 'Commissions et missions' : user?.role === 'admin' ? 'Volume ' + money(stats['volume']) : 'Disponible apres liberation admin' }}</span>
+      </section>
+
+      <section class="flow-panel" *ngIf="!loading && user?.role !== 'admin'">
+        <article [class.active]="user?.role === 'client'">
+          <b>1</b>
+          <strong>Client paie</strong>
+          <span>Carte, PayPal, virement ou mobile money.</span>
+        </article>
+        <article>
+          <b>2</b>
+          <strong>Escrow TalentHub</strong>
+          <span>L argent reste bloque pendant la mission.</span>
+        </article>
+        <article [class.active]="user?.role === 'freelancer'">
+          <b>3</b>
+          <strong>Freelancer retire</strong>
+          <span>Le solde devient retirable apres liberation.</span>
+        </article>
+      </section>
+
+      <section class="stats" *ngIf="!loading">
+        <article *ngIf="user?.role === 'freelancer'"><span>Revenus totaux</span><strong>{{ money(stats['earned_total']) }}</strong></article>
+        <article *ngIf="user?.role === 'freelancer'"><span>Argent en attente escrow</span><strong>{{ money(stats['escrow_pending']) }}</strong></article>
+        <article *ngIf="user?.role === 'freelancer'"><span>Commissions payees</span><strong>{{ money(stats['fees_paid']) }}</strong></article>
+        <article *ngIf="user?.role === 'freelancer'"><span>Demandes retrait</span><strong>{{ money(stats['pending_payouts']) }}</strong></article>
+        <article *ngIf="user?.role === 'client'"><span>Commission</span><strong>{{ money(stats['commission_paid']) }}</strong></article>
+        <article *ngIf="user?.role === 'client'"><span>Projets payes</span><strong>{{ stats['projects_paid'] || 0 }}</strong></article>
+        <article *ngIf="user?.role === 'client'"><span>Escrow bloque</span><strong>{{ money(stats['escrow_held']) }}</strong></article>
+        <article *ngIf="user?.role === 'admin'"><span>Transactions</span><strong>{{ stats['transactions'] || 0 }}</strong></article>
+        <article *ngIf="user?.role === 'admin'"><span>Retraits attente</span><strong>{{ stats['pending_payouts'] || 0 }}</strong></article>
+        <article *ngIf="user?.role === 'admin'"><span>Escrow bloque</span><strong>{{ money(stats['escrow_held']) }}</strong></article>
+        <article *ngIf="user?.role === 'admin'"><span>Litiges ouverts</span><strong>{{ stats['open_disputes'] || 0 }}</strong></article>
+      </section>
+
+      <section class="panel" *ngIf="user?.role === 'freelancer' && !loading">
+        <h2>Demander un retrait</h2>
+        <input type="number" [(ngModel)]="payoutForm.amount" placeholder="Montant" />
+        <select [(ngModel)]="payoutForm.method">
+          <option *ngFor="let method of paymentMethods" [value]="method.value">{{ method.label }}</option>
+        </select>
+        <input [(ngModel)]="payoutForm.destination" placeholder="IBAN, email PayPal, Payoneer ou numero mobile money" />
+        <button type="button" (click)="requestPayout()">Envoyer</button>
+      </section>
+
+      <section class="panel" *ngIf="payouts.length">
+        <h2>Demandes de retrait</h2>
+        <article class="row" *ngFor="let payout of payouts">
+          <span><strong>{{ money(payout.amount) }}</strong><small>{{ methodLabel(payout.method) }} - {{ payout.status }}</small></span>
+        </article>
+      </section>
+
+      <section class="panel" *ngIf="disputes.length">
+        <h2>Litiges</h2>
+        <article class="row dispute-row" *ngFor="let dispute of disputes">
+          <span>
+            <strong>{{ dispute.reason || 'Litige' }}</strong>
+            <small>{{ dispute.opened_by_role }} - {{ dispute.status }}{{ dispute.resolution ? ' - ' + dispute.resolution : '' }}</small>
+          </span>
+          <div class="row-actions" *ngIf="user?.role === 'admin' && dispute.status === 'open'">
+            <button type="button" (click)="resolveDispute(dispute, 'release')">Liberer</button>
+            <button type="button" (click)="resolveDispute(dispute, 'refund')">Rembourser</button>
+            <button type="button" (click)="resolveDispute(dispute, 'close')">Fermer</button>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel" *ngIf="!loading">
+        <div class="section-head">
+          <h2>{{ user?.role === 'freelancer' ? 'Historique des transactions' : 'Transactions' }}</h2>
+          <button type="button" (click)="loadHistory()">Filtrer</button>
+        </div>
+        <div class="filters">
+          <input [(ngModel)]="txFilters.q" placeholder="Facture ou statut" />
+          <select [(ngModel)]="txFilters.status">
+            <option value="">Tous statuts</option>
+            <option value="held">Escrow</option>
+            <option value="completed">Libere</option>
+            <option value="disputed">Litige</option>
+            <option value="refunded">Rembourse</option>
+          </select>
+        </div>
+        <article class="tx-card" *ngFor="let tx of transactions">
+          <div class="tx-main">
+            <span>
+              <strong>{{ tx.invoice_number || tx.type || 'transaction' }}</strong>
+              <small>{{ statusLabel(tx) }} - {{ tx.type || 'transaction' }}</small>
+            </span>
+            <em>{{ money(txAmount(tx)) }}</em>
+          </div>
+          <div class="fee-grid" *ngIf="tx.type === 'project_payment'">
+            <span><small>Client fee</small><strong>{{ money(tx.client_commission) }}</strong></span>
+            <span><small>Freelancer fee</small><strong>{{ money(tx.freelancer_commission) }}</strong></span>
+            <span><small>Net freelancer</small><strong>{{ money(tx.freelancer_receives) }}</strong></span>
+            <span><small>Plateforme</small><strong>{{ money(tx.platform_revenue) }}</strong></span>
+          </div>
+          <div class="row-actions">
+            <button type="button" (click)="downloadInvoice(tx)">Facture PDF</button>
+            <button type="button" *ngIf="canRelease(tx)" (click)="releaseEscrow(tx)">Liberer</button>
+            <button type="button" *ngIf="canRefund(tx)" (click)="refundEscrow(tx)">Rembourser</button>
+          </div>
+          <div class="dispute-box" *ngIf="canDispute(tx)">
+            <input [ngModel]="disputeForm[tx._id || '']" (ngModelChange)="disputeForm[tx._id || ''] = $event" placeholder="Motif du litige" />
+            <button type="button" (click)="openDispute(tx)">Ouvrir litige</button>
+          </div>
+        </article>
+        <div class="empty" *ngIf="!transactions.length">Aucune transaction pour le moment.</div>
+      </section>
+    </div>
+  </div>
+</ion-content>

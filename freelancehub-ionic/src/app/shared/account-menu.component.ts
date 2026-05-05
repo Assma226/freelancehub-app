@@ -3,11 +3,11 @@ import { Component, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
 import { IonIcon } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { heart, notifications, settings, personCircle, logOut } from 'ionicons/icons';
+import { card, heart, notifications, settings, personCircle, logOut, speedometer } from 'ionicons/icons';
 import { clearSession, getSessionUser } from './api-url';
 
 // Add ionicons to the system
-addIcons({ heart, notifications, settings, personCircle, logOut });
+addIcons({ card, heart, notifications, settings, personCircle, logOut, speedometer });
 
 @Component({
   selector: 'app-account-menu',
@@ -47,6 +47,18 @@ export class AccountMenuComponent {
     event.stopPropagation();
     this.closeMenu();
     void this.router.navigate(['/favorites']);
+  }
+
+  openPayments(event: Event) {
+    event.stopPropagation();
+    this.closeMenu();
+    void this.router.navigate(['/payments']);
+  }
+
+  openAdmin(event: Event) {
+    event.stopPropagation();
+    this.closeMenu();
+    void this.router.navigate(['/admin']);
   }
 
   openPortfolio(event: Event) {

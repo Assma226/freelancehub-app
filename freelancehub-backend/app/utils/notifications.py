@@ -48,6 +48,36 @@ def create_notification(
     return mongo.db.notifications.insert_one(document)
 
 
+def notify_admins(
+    notif_type: str,
+    title: str,
+    body: str,
+    actor_id=None,
+    entity_id=None,
+    entity_type: str = '',
+    meta: dict | None = None,
+):
+    admin_ids = [
+        admin['_id']
+        for admin in mongo.db.users.find({'role': 'admin', 'is_active': {'$ne': False}}, {'_id': 1})
+    ]
+    results = []
+    for admin_id in admin_ids:
+        result = create_notification(
+            user_id=admin_id,
+            notif_type=notif_type,
+            title=title,
+            body=body,
+            actor_id=actor_id,
+            entity_id=entity_id,
+            entity_type=entity_type,
+            meta=meta,
+        )
+        if result:
+            results.append(result)
+    return results
+
+
 def serialize_notification(doc: dict) -> dict:
     item = {
         'id': str(doc.get('_id')),

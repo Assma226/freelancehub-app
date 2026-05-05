@@ -1,13 +1,15 @@
 <ion-content>
-  <div class="welcome-shell">
+  <div class="welcome-shell" [class.freelancer-dashboard]="!isClient">
     <div class="phone-frame app-frame">
-      <div class="top-bar">
+      <div class="top-bar" [class.freelancer-top]="!isClient">
         <div class="brand-block">
           <strong>TalentHub</strong>
-          <span>{{ isClient ? 'Espace client' : 'Espace freelancer' }}</span>
+          <span class="role-badge" [class.freelancer-badge]="!isClient">
+            {{ isClient ? 'Client' : 'Freelancer' }}
+          </span>
         </div>
         <div class="top-actions">
-          <button type="button" class="notification-btn" (click)="openNotifications()" aria-label="Notifications">
+          <button type="button" class="notification-btn" [class.freelancer-notif]="!isClient" (click)="openNotifications()" aria-label="Notifications">
             <span class="notification-bell"></span>
             <span class="notification-label">Alerts</span>
             <span class="notification-badge" *ngIf="unreadNotifications">{{ unreadNotifications }}</span>
@@ -16,22 +18,40 @@
         </div>
       </div>
 
-      <section class="hero-zone">
-        <span class="pill">{{ isClient ? 'Dashboard client' : 'Dashboard freelancer' }}</span>
-        <h1>Bonjour {{ user?.name || 'utilisateur' }}</h1>
-        <p>
-          {{ isClient
-            ? 'Publiez une demande, ouvrez un service et suivez vos candidats dans la meme structure que welcome.'
-            : 'Accedez aux services, aux projets du marche et a vos candidatures dans une interface identique.' }}
-        </p>
+      <section class="hero-zone" [class.freelancer-hero]="!isClient">
+        <div class="hero-accent" [class.freelancer-accent]="!isClient"></div>
+        <ng-container *ngIf="isClient; else freelancerHero">
+          <span class="pill">Dashboard Client</span>
+          <h1>Bonjour {{ user?.name || 'utilisateur' }}</h1>
+          <h2 class="hero-kicker">{{ dashboardHeadline }}</h2>
+          <p>{{ dashboardCopy }}</p>
+        </ng-container>
+        <ng-template #freelancerHero>
+          <span class="freelancer-greeting">Bonjour</span>
+          <h1>{{ user?.name || 'utilisateur' }}</h1>
+          <span class="trial-pill">
+            <span></span>
+            Essai gratuit actif - 0% commission
+          </span>
+        </ng-template>
         <div class="hero-actions">
-          <ion-button (click)="isClient ? openClientHub() : openMyJobs()">
-            {{ isClient ? 'Creer une demande' : 'Mes propositions' }}
+          <ion-button color="primary" (click)="isClient ? openClientHub() : openMyJobs()">
+            {{ isClient ? 'Creer une demande' : 'Voir mes projets' }}
           </ion-button>
-          <ion-button fill="outline" class="cta-secondary" (click)="goMessages()">
-            Messagerie
+          <ion-button fill="outline" color="primary" class="cta-secondary" (click)="isClient ? goMessages() : openService('all')">
+            {{ isClient ? 'Messagerie' : 'Postuler' }}
             <span class="cta-badge" *ngIf="unreadMessages">{{ unreadMessages }}</span>
           </ion-button>
+        </div>
+        <div class="metrics-grid" [class.freelancer-stats]="!isClient" *ngIf="dashboardMetrics.length">
+          <article class="metric-card" *ngFor="let metric of dashboardMetrics" [class.primary]="metric.tone === 'primary'" [class.success]="metric.tone === 'success'" [class.neutral]="metric.tone === 'neutral'" [class.freelancer-metric]="!isClient && metric.tone === 'success'" [class.client-metric]="isClient">
+            <span class="metric-icon" *ngIf="!isClient && metric.icon">
+              <ion-icon [name]="metric.icon"></ion-icon>
+            </span>
+            <span class="metric-badge" *ngIf="!isClient && metric.badge">{{ metric.badge }}</span>
+            <strong>{{ metric.value }}</strong>
+            <span>{{ metric.label }}</span>
+          </article>
         </div>
       </section>
 
@@ -40,41 +60,119 @@
           <ion-spinner name="crescent"></ion-spinner>
         </div>
 
-        <section class="section-card compact-card" *ngIf="!loading">
-          <div class="section-head">
-            <h2>Categories</h2>
-            <button type="button" class="mini-link" (click)="openService('all')">Marche</button>
+        <section class="freelancer-revenue-panel" *ngIf="!loading && !isClient">
+          <div class="dashboard-section-head">
+            <h2>Revenus ce mois</h2>
+            <div class="period-tabs" aria-label="Periode revenus">
+              <button type="button">7j</button>
+              <button type="button" class="active">30j</button>
+              <button type="button">90j</button>
+            </div>
           </div>
-          <div class="category-grid">
-            <button type="button" class="category-chip" *ngFor="let c of categories" (click)="openService(c.slug)">
-              <span class="category-icon">{{ categorySymbol(c) }}</span>
-              <strong>{{ c.name }}</strong>
-              <small>{{ c.projects_count || 0 }} projets</small>
+
+          <article class="revenue-card">
+            <div class="revenue-summary">
+              <div>
+                <span>Total encaisse</span>
+                <strong>${{ revenueTotal }}</strong>
+                <small>Transactions liberees</small>
+              </div>
+              <div class="commission-box">
+                <span>Commission</span>
+                <strong>${{ revenueCommission }}</strong>
+                <small>Essai gratuit</small>
+              </div>
+            </div>
+            <div class="revenue-chart real-curve" aria-label="Courbe des revenus reels">
+              <svg viewBox="0 0 300 86" preserveAspectRatio="none">
+                <polygon [attr.points]="revenueAreaPoints"></polygon>
+                <polyline [attr.points]="revenuePolylinePoints"></polyline>
+              </svg>
+              <span
+                class="curve-point"
+                *ngFor="let bar of revenueBars; let i = index"
+                [style.left.%]="(i / (revenueBars.length - 1)) * 100"
+                [style.bottom.%]="bar.value * 0.78 + 10"
+                [attr.title]="bar.day + ' - $' + bar.amount">
+              </span>
+            </div>
+            <div class="chart-labels">
+              <span *ngFor="let bar of revenueBars">{{ bar.day }}</span>
+            </div>
+          </article>
+        </section>
+
+        <section class="section-card compact-card" [class.accent-panel]="isClient" [class.freelancer-focus-panel]="!isClient" *ngIf="!loading && focusCards.length">
+          <div class="section-head">
+            <h2>{{ isClient ? 'Vue de pilotage' : 'Opportunites prioritaires' }}</h2>
+            <button type="button" class="mini-link" *ngIf="!isClient" (click)="openProgressTracker()">Tout voir</button>
+          </div>
+          <div class="focus-grid">
+            <button type="button" class="focus-card" [class.freelancer-focus-card]="!isClient" *ngFor="let card of focusCards; let i = index" (click)="openPrimaryFocusCard(i)">
+              <span class="focus-icon" *ngIf="!isClient && card.icon" [class.credibility]="card.tone === 'credibility'" [class.finance]="card.tone === 'finance'">
+                <ion-icon [name]="card.icon"></ion-icon>
+              </span>
+              <span class="focus-step" *ngIf="!isClient">ETAPE {{ i + 1 }}</span>
+              <span class="focus-copy-block">
+                <small>{{ card.eyebrow }}</small>
+                <strong>{{ card.title }}</strong>
+                <p>{{ card.copy }}</p>
+                <span *ngIf="isClient">{{ card.action }}</span>
+              </span>
+              <span class="focus-arrow" *ngIf="!isClient">›</span>
             </button>
           </div>
         </section>
 
         <section class="section-card compact-card" *ngIf="!loading">
           <div class="section-head">
-            <h2>Actions rapides</h2>
+            <h2>{{ isClient ? 'Categories' : 'Domaines de services' }}</h2>
+            <button type="button" class="mini-link" (click)="openService('all')">{{ isClient ? 'Marche' : 'Tous les services' }}</button>
+          </div>
+          <div class="category-grid" *ngIf="isClient; else freelancerServices">
+            <button type="button" class="category-chip" [class.freelancer-chip]="!isClient" *ngFor="let c of categories" (click)="openService(c.slug)">
+              <span class="category-icon">{{ categorySymbol(c) }}</span>
+              <strong>{{ c.name }}</strong>
+              <small>{{ c.projects_count || 0 }} {{ isClient ? 'proj' : 'opp' }}</small>
+            </button>
+          </div>
+          <ng-template #freelancerServices>
+            <div class="service-grid">
+              <button type="button" class="service-card" *ngFor="let c of serviceCards" (click)="openService(c.slug)">
+                <span class="service-icon">
+                  <ion-icon [name]="c.icon"></ion-icon>
+                </span>
+                <span class="service-copy">
+                  <strong>{{ c.name }}</strong>
+                  <small>{{ c.opportunities }} opportunite{{ c.opportunities > 1 ? 's' : '' }}</small>
+                  <em *ngIf="c.badge">{{ c.badge }}</em>
+                </span>
+              </button>
+            </div>
+          </ng-template>
+        </section>
+
+        <section class="section-card compact-card" *ngIf="!loading && isClient">
+          <div class="section-head">
+            <h2>{{ isClient ? 'Actions rapides' : 'Mes actions' }}</h2>
           </div>
           <div class="quick-grid">
-            <button type="button" class="quick-card" (click)="openMyJobs()">Ouvrir le dashboard</button>
-            <button type="button" class="quick-card" *ngIf="isClient" (click)="openClientHub()">Publier une demande</button>
-            <button type="button" class="quick-card" *ngIf="!isClient" (click)="openService('all')">Explorer les services</button>
-            <button type="button" class="quick-card" (click)="goMessages()">Acceder a la messagerie</button>
-            <button type="button" class="quick-card" (click)="openNotifications()">Voir les notifications</button>
-            <button type="button" class="quick-card" (click)="openProgressTracker()">Suivre les projets</button>
-            <button type="button" class="quick-card" (click)="openFavorites()">Mes favoris</button>
+            <button type="button" class="quick-card" [class.freelancer-quick-card]="!isClient" (click)="openMyJobs()">{{ isClient ? 'Dashboard client' : 'Mon dashboard' }}</button>
+            <button type="button" class="quick-card" [class.freelancer-quick-card]="!isClient" *ngIf="isClient" (click)="openClientHub()">Publier une demande</button>
+            <button type="button" class="quick-card" [class.freelancer-quick-card]="!isClient" *ngIf="!isClient" (click)="openService('all')">Marche du travail</button>
+            <button type="button" class="quick-card" [class.freelancer-quick-card]="!isClient" (click)="goMessages()">Messagerie</button>
+            <button type="button" class="quick-card" [class.freelancer-quick-card]="!isClient" (click)="openNotifications()">Notifications</button>
+            <button type="button" class="quick-card" [class.freelancer-quick-card]="!isClient" (click)="openProgressTracker()">{{ isClient ? 'Suivre' : 'Suivi' }} projets</button>
+            <button type="button" class="quick-card" [class.freelancer-quick-card]="!isClient" (click)="openFavorites()">{{ isClient ? 'Mes favoris' : 'Sauvegardes' }}</button>
           </div>
         </section>
 
-        <section class="section-card compact-card" *ngIf="!loading">
+        <section class="section-card compact-card" *ngIf="!loading && isClient">
           <div class="section-head">
-            <h2>Projets ouverts</h2>
+            <h2>{{ isClient ? 'Projets ouverts' : 'Opportunites du moment' }}</h2>
           </div>
-          <div class="project-list">
-            <article class="project-card" *ngFor="let project of projects" (click)="openProject(project.id)">
+          <div class="project-list" [class.freelancer-project-list]="!isClient">
+            <article class="project-card" [class.freelancer-project-card]="!isClient" *ngFor="let project of spotlightProjects.length ? spotlightProjects : projects" (click)="openProject(project.id)">
               <div class="project-cover"></div>
               <div class="project-body">
                 <button

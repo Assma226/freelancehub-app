@@ -1,13 +1,19 @@
 export interface ApiErrorBody {
   error: string;
   count?: number;
+  code?: string;
+  pii?: {
+    contains_pii?: boolean;
+    pii_types?: string[];
+    severity?: string;
+  };
 }
 
 export interface AuthUserDto {
   id: string;
   name: string;
   email: string;
-  role: 'client' | 'freelancer';
+  role: 'client' | 'freelancer' | 'admin';
   avatar?: string;
   trial_used?: boolean;
 }
@@ -88,7 +94,7 @@ export interface UserMeDto {
   id: string;
   name: string;
   email: string;
-  role: 'client' | 'freelancer';
+  role: 'client' | 'freelancer' | 'admin';
   avatar?: string;
   trial_used?: boolean;
   freelancer?: FreelancerProfileDto | null;
@@ -125,6 +131,11 @@ export interface ProjectDocumentDto {
   is_trial?: boolean;
   is_trial_project?: boolean;
   agreed_amount?: number;
+  accepted_freelancer?: string;
+  assigned_freelancer_id?: string;
+  escrow_transaction_id?: string;
+  escrow_status?: 'funded' | 'released' | 'refunded' | 'disputed' | string;
+  payment_method?: string;
   progress_entries?: Array<{
     work_date?: string;
     title?: string;
@@ -209,8 +220,6 @@ export interface ConversationDto {
   other_user_name?: string;
   other_user_role?: 'client' | 'freelancer' | string;
   other_user_avatar?: string;
-  other_user_phone?: string;
-  other_user_email?: string;
 }
 
 export interface ConversationsListDto {

@@ -20,8 +20,11 @@
         <span>${{ project.budgetMin ?? project.budget_min ?? 0 }} - ${{ project.budgetMax ?? project.budget_max ?? 0 }}</span>
         <span>{{ project.applicants ?? project.applicants_count ?? 0 }} candidats</span>
         <span>{{ statusLabel(project.status) }}</span>
+        <span *ngIf="isInProgress">{{ escrowStatusLabel(project.escrow_status) }}</span>
       </div>
-      <button type="button" class="tracker-link" *ngIf="isInProgress" (click)="openTracker()">Suivre la progression</button>
+      <button type="button" class="tracker-link" *ngIf="isInProgress && (userRole !== 'freelancer' || canSubmitProgressUpdate)" (click)="openTracker()">
+        {{ userRole === 'freelancer' ? 'Ajouter avancement' : 'Suivre la progression' }}
+      </button>
       <button type="button" class="favorite-btn" [class.active]="isFavorite" (click)="toggleFavorite()">
         {{ isFavorite ? 'Retire des favoris' : 'Ajouter aux favoris' }}
       </button>
@@ -130,6 +133,78 @@
       </div>
     </section>
 
+    <section class="panel-card payment-card" *ngIf="!loading && project && userRole === 'client' && isInProgress">
+      <div class="section-head">
+        <h2>Paiement de la mission</h2>
+        <span class="health-pill" [class.risk]="project.escrow_status === 'funded'" [class.blocked]="!project.escrow_transaction_id">
+          {{ project.escrow_status === 'released' ? 'Freelancer paye' : project.escrow_transaction_id ? 'En escrow' : 'A payer' }}
+        </span>
+      </div>
+
+      <div class="payment-flow">
+        <article [class.active]="!project.escrow_transaction_id">
+          <strong>1</strong>
+          <span>Client paie</span>
+        </article>
+        <article [class.active]="project.escrow_status === 'funded'">
+          <strong>2</strong>
+          <span>Argent bloque</span>
+        </article>
+        <article [class.active]="project.escrow_status === 'released'">
+          <strong>3</strong>
+          <span>Freelancer recoit</span>
+        </article>
+      </div>
+
+      <div class="payment-editor" *ngIf="canPayProject">
+        <label>
+          <span>Montant convenu</span>
+          <input type="number" min="1" step="0.01" [(ngModel)]="paymentForm.amount" (ngModelChange)="previewPayment()" />
+        </label>
+        <label>
+          <span>Mode de paiement client</span>
+          <select [(ngModel)]="paymentForm.method">
+            <option value="card">Carte bancaire</option>
+            <option value="paypal">PayPal</option>
+            <option value="bank_transfer">Virement bancaire</option>
+            <option value="mobile_money">Mobile money</option>
+          </select>
+        </label>
+        <div class="payment-summary" *ngIf="paymentPreview">
+          <span><small>Client paie</small><strong>${{ paymentPreview['client_pays'] || 0 }}</strong></span>
+          <span><small>Freelancer recoit</small><strong>${{ paymentPreview['freelancer_receives'] || 0 }}</strong></span>
+          <span><small>Commission client</small><strong>${{ paymentPreview['client_commission'] || 0 }}</strong></span>
+          <span><small>Commission freelancer</small><strong>${{ paymentPreview['freelancer_commission'] || 0 }}</strong></span>
+        </div>
+        <p class="error" *ngIf="paymentError">{{ paymentError }}</p>
+        <p class="success" *ngIf="paymentSuccess">{{ paymentSuccess }}</p>
+        <ion-button expand="block" (click)="payProject()">{{ paymentSaving ? 'Paiement...' : 'Payer et bloquer en escrow' }}</ion-button>
+      </div>
+
+      <div class="payment-editor" *ngIf="canReleasePayment">
+        <p>Le paiement est garde en escrow. Quand la livraison est validee, liberez le montant net vers le portefeuille du freelancer.</p>
+        <p class="error" *ngIf="paymentError">{{ paymentError }}</p>
+        <p class="success" *ngIf="paymentSuccess">{{ paymentSuccess }}</p>
+        <ion-button expand="block" (click)="releaseProjectPayment()">{{ paymentSaving ? 'Liberation...' : 'Liberer le paiement freelancer' }}</ion-button>
+      </div>
+
+      <div class="payment-editor" *ngIf="project.escrow_status === 'released'">
+        <p class="success">Paiement libere. Le freelancer peut demander un retrait depuis son portefeuille.</p>
+      </div>
+    </section>
+
+    <section class="panel-card payment-card" *ngIf="!loading && project && userRole === 'freelancer' && isInProgress">
+      <div class="section-head">
+        <h2>Etat du paiement</h2>
+        <span class="health-pill" [class.risk]="project.escrow_status !== 'funded' && project.escrow_status !== 'released'" [class.blocked]="project.escrow_status === 'refunded'">
+          {{ escrowStatusLabel(project.escrow_status) }}
+        </span>
+      </div>
+      <p [class.success]="project.escrow_status === 'funded' || project.escrow_status === 'released'" [class.error]="project.escrow_status === 'refunded'">
+        {{ freelancerPaymentAlert }}
+      </p>
+    </section>
+
     <section class="panel-card status-card" *ngIf="!loading && project && userRole === 'client'">
       <h2>Project Status</h2>
       <label>
@@ -200,7 +275,7 @@
       <ion-button expand="block" (click)="submitBid()">Envoyer au client</ion-button>
     </section>
 
-    <section class="panel-card proposal-card" *ngIf="!loading && project && userRole === 'freelancer' && isInProgress">
+    <section class="panel-card proposal-card" *ngIf="!loading && project && canSubmitProgressUpdate">
       <h2>Publier une mise a jour</h2>
       <label>
         <span>Titre</span>

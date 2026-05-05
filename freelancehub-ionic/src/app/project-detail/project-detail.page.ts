@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { IonButton, IonContent, IonSpinner } from '@ionic/angular/standalone';
 import { apiAuthHeaders, apiUrl, getSessionUser } from '../shared/api-url';
-import { ProjectDocumentDto } from '../shared/api.dto';
+import { ApiErrorBody, ProjectDocumentDto } from '../shared/api.dto';
 import { AccountMenuComponent } from '../shared/account-menu.component';
 import { UserBottomNavComponent } from '../shared/user-bottom-nav.component';
 
@@ -28,6 +28,14 @@ export class ProjectDetailPage implements OnInit {
   progressSaving = false;
   contractError = '';
   contractSaving = false;
+  paymentError = '';
+  paymentSuccess = '';
+  paymentSaving = false;
+  paymentPreview: Record<string, number | boolean | string> | null = null;
+  paymentForm = {
+    amount: 0,
+    method: 'card',
+  };
   progressForm = {
     title: '',
     summary: '',
@@ -63,6 +71,7 @@ export class ProjectDetailPage implements OnInit {
       this.progressForm.completion_percent = Number(this.project.progress_percent || 0);
       this.progressForm.health = String(this.project.progress_health || 'on-track');
       this.syncContractForm();
+      this.syncPaymentForm();
       if (getSessionUser()) {
         await this.loadFavoriteState();
       }
@@ -82,7 +91,8 @@ export class ProjectDetailPage implements OnInit {
       }),
     });
     if (!res.ok) {
-      this.error = 'Impossible d envoyer la proposition.';
+      const data = await res.json().catch(() => null) as ApiErrorBody | null;
+      this.error = data?.error || 'Impossible d envoyer la proposition.';
       return;
     }
     await this.router.navigate(['/my-jobs']);
@@ -122,6 +132,28 @@ export class ProjectDetailPage implements OnInit {
 
   get canComplete() {
     return this.userRole === 'client' && this.project?.status === 'in-progress';
+  }
+
+  get canPayProject() {
+    return this.userRole === 'client' && this.project?.status === 'in-progress' && this.contract?.status === 'signed' && !this.project?.escrow_transaction_id;
+  }
+
+  get canReleasePayment() {
+    return this.userRole === 'admin' && this.project?.status === 'completed' && this.project?.escrow_transaction_id && this.project?.escrow_status === 'funded';
+  }
+
+  get canSubmitProgressUpdate() {
+    return this.userRole === 'freelancer' && this.isInProgress && this.project?.escrow_status === 'funded';
+  }
+
+  get freelancerPaymentAlert() {
+    if (!this.project) return '';
+    if (this.project.escrow_status === 'funded') return 'Argent bloque en escrow. Vous pouvez ajouter votre avancement.';
+    if (this.project.escrow_status === 'released') return 'Paiement libere vers votre portefeuille.';
+    if (this.project.escrow_status === 'refunded') return 'Paiement rembourse au client par l admin.';
+    if (this.contract?.status === 'signed') return 'Accord signe. En attente du paiement client en escrow.';
+    if (this.contract?.status === 'pending-signature') return 'Votre candidature est acceptee. Signez l accord pour continuer.';
+    return 'Paiement non encore effectue.';
   }
 
   get canReopen() {
@@ -181,7 +213,11 @@ export class ProjectDetailPage implements OnInit {
   }
 
   openTracker() {
-    void this.router.navigate(['/project-progress']);
+    if (!this.project?.id) {
+      void this.router.navigate(['/project-progress']);
+      return;
+    }
+    void this.router.navigate(['/project-progress'], { queryParams: { project: this.project.id } });
   }
 
   healthLabel(value?: string) {
@@ -196,6 +232,14 @@ export class ProjectDetailPage implements OnInit {
     return 'Draft';
   }
 
+  escrowStatusLabel(value?: string) {
+    if (value === 'funded') return 'Argent bloque';
+    if (value === 'released') return 'Libere';
+    if (value === 'refunded') return 'Rembourse';
+    if (value === 'disputed') return 'Litige';
+    return 'Paiement non encore effectue';
+  }
+
   syncContractForm() {
     const contract = this.project?.contract;
     this.contractForm.start_date = String(contract?.start_date || '');
@@ -203,6 +247,77 @@ export class ProjectDetailPage implements OnInit {
     this.contractForm.amount = Number(contract?.amount ?? this.project?.agreed_amount ?? 0);
     this.contractForm.terms = String(contract?.terms || '');
     this.contractForm.deliverablesText = (contract?.deliverables || []).join('\n');
+  }
+
+  syncPaymentForm() {
+    const amount = Number(this.project?.contract?.amount || this.project?.agreed_amount || this.project?.budgetMax || this.project?.budget_max || 0);
+    this.paymentForm.amount = Math.round(amount);
+    void this.previewPayment();
+  }
+
+  async previewPayment() {
+    if (!this.paymentForm.amount || this.paymentForm.amount <= 0) {
+      this.paymentPreview = null;
+      return;
+    }
+    const res = await fetch(apiUrl(`/api/payments/commission?budget=${this.paymentForm.amount}`), {
+      headers: apiAuthHeaders(false),
+    });
+    if (!res.ok) return;
+    this.paymentPreview = await res.json() as Record<string, number | boolean | string>;
+  }
+
+  async payProject() {
+    if (!this.project?.id) return;
+    this.paymentSaving = true;
+    this.paymentError = '';
+    this.paymentSuccess = '';
+    try {
+      const res = await fetch(apiUrl(`/api/payments/project/${this.project.id}/pay`), {
+        method: 'POST',
+        headers: apiAuthHeaders(),
+        body: JSON.stringify({
+          agreed_amount: this.paymentForm.amount,
+          freelancer_id: this.project.accepted_freelancer || this.project.assigned_freelancer_id,
+          payment_method: this.paymentForm.method,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null) as ApiErrorBody | null;
+        this.paymentError = data?.error || 'Impossible de placer le paiement en escrow.';
+        return;
+      }
+      const data = await res.json() as { transaction_id?: string; escrow_status?: string };
+      this.paymentSuccess = 'Paiement place en escrow. Le freelancer sera paye apres validation.';
+      this.project.escrow_transaction_id = data.transaction_id;
+      this.project.escrow_status = data.escrow_status || 'funded';
+      this.project.payment_method = this.paymentForm.method;
+    } finally {
+      this.paymentSaving = false;
+    }
+  }
+
+  async releaseProjectPayment() {
+    if (!this.project?.escrow_transaction_id) return;
+    this.paymentSaving = true;
+    this.paymentError = '';
+    this.paymentSuccess = '';
+    try {
+      const res = await fetch(apiUrl(`/api/payments/transactions/${this.project.escrow_transaction_id}/release`), {
+        method: 'POST',
+        headers: apiAuthHeaders(),
+        body: JSON.stringify({}),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null) as ApiErrorBody | null;
+        this.paymentError = data?.error || 'Impossible de liberer le paiement.';
+        return;
+      }
+      this.paymentSuccess = 'Paiement libere. Le solde est maintenant disponible pour le freelancer.';
+      this.project.escrow_status = 'released';
+    } finally {
+      this.paymentSaving = false;
+    }
   }
 
   async saveContract() {

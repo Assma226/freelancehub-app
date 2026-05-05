@@ -1,0 +1,122 @@
+<ion-content>
+  <div class="admin-shell">
+    <div class="admin-frame">
+      <header class="admin-top">
+        <span class="admin-avatar">{{ initials(user?.name) }}</span>
+        <div>
+          <small>Bonjour</small>
+          <strong>Administrateur</strong>
+        </div>
+        <button type="button" class="icon-button" (click)="loadAll()" aria-label="Refresh">
+          <ion-icon name="refresh"></ion-icon>
+        </button>
+        <app-account-menu></app-account-menu>
+      </header>
+
+      <p class="error" *ngIf="error">{{ error }}</p>
+
+      <ng-container *ngIf="!loading">
+        <section class="hero-card" *ngIf="activeTab === 'overview'">
+          <small>Vue d'ensemble</small>
+          <h1>FreelanceHub</h1>
+          <span>Plateforme sous controle</span>
+        </section>
+
+        <section class="panel" *ngIf="activeTab === 'overview'">
+          <div class="section-title">
+            <h2>Statistiques de la plateforme</h2>
+            <button type="button" (click)="goPayments()">Paiements</button>
+          </div>
+          <div class="stats-grid">
+            <article><span>Utilisateurs</span><strong>{{ stats['users_total'] || 0 }}</strong></article>
+            <article><span>Clients</span><strong>{{ stats['clients'] || 0 }}</strong></article>
+            <article><span>Freelancers</span><strong>{{ stats['freelancers'] || 0 }}</strong></article>
+            <article><span>Candidatures</span><strong>{{ stats['applications'] || 0 }}</strong></article>
+            <article><span>Projets ouverts</span><strong>{{ stats['open_projects'] || 0 }}</strong></article>
+            <article><span>Revenus</span><strong>{{ money(stats['platform_revenue']) }}</strong></article>
+          </div>
+        </section>
+
+        <section class="panel" *ngIf="activeTab === 'overview'">
+          <div class="section-title">
+            <h2>Derniers inscrits</h2>
+            <button type="button" (click)="activeTab = 'users'">Voir tout</button>
+          </div>
+          <button type="button" class="user-row" *ngFor="let u of latestUsers">
+            <span class="avatar">{{ initials(u.name) }}</span>
+            <span><strong>{{ u.name }}</strong><small>{{ u.email }}</small></span>
+            <em [class.off]="u.is_active === false">{{ u.is_active === false ? 'Bloque' : 'Actif' }}</em>
+          </button>
+        </section>
+
+        <section class="panel" *ngIf="activeTab === 'users'">
+          <h1 class="page-title">Utilisateurs</h1>
+          <input class="search" [(ngModel)]="search" (ngModelChange)="loadUsers()" placeholder="Rechercher un utilisateur..." />
+          <div class="chips">
+            <button type="button" [class.active]="!roleFilter" (click)="roleFilter=''; loadUsers()">Tous</button>
+            <button type="button" [class.active]="roleFilter==='freelancer'" (click)="roleFilter='freelancer'; loadUsers()">Freelancers</button>
+            <button type="button" [class.active]="roleFilter==='client'" (click)="roleFilter='client'; loadUsers()">Clients</button>
+          </div>
+          <article class="user-card" *ngFor="let u of users">
+            <div class="user-main">
+              <span class="avatar large">{{ initials(u.name) }}</span>
+              <div>
+                <strong>{{ u.name }}</strong>
+                <small>{{ u.email }}</small>
+                <em>{{ u.role }}</em>
+              </div>
+            </div>
+            <p *ngIf="u.role === 'freelancer'">Profil {{ u.profile_exists ? 'freelancer valide' : 'a completer' }} · {{ u.applications_count || 0 }} candidatures</p>
+            <p *ngIf="u.role === 'client'">{{ u.projects_count || 0 }} projets publies</p>
+            <div class="actions">
+              <span [class.off]="u.is_active === false">{{ u.is_active === false ? 'Bloque' : 'Actif' }}</span>
+              <button type="button" *ngIf="u.is_active !== false" (click)="updateUser(u, 'block')">Bloquer</button>
+              <button type="button" *ngIf="u.is_active === false" (click)="updateUser(u, 'activate')">Activer</button>
+            </div>
+          </article>
+        </section>
+
+        <section class="panel" *ngIf="activeTab === 'projects'">
+          <h1 class="page-title">Projets</h1>
+          <article class="project-card" *ngFor="let p of projects">
+            <strong>{{ p.title || 'Projet sans titre' }}</strong>
+            <span>{{ p.status || 'open' }} · {{ p.applicants_count || 0 }} candidatures</span>
+            <small>{{ money(p.agreed_amount) }}</small>
+          </article>
+        </section>
+
+        <section class="panel" *ngIf="activeTab === 'payments'">
+          <div class="section-title">
+            <h1 class="page-title">Paiements</h1>
+            <button type="button" (click)="goPayments()">Centre</button>
+          </div>
+          <article class="payment-card" *ngFor="let payout of payouts">
+            <strong>Retrait {{ money(payout.amount) }}</strong>
+            <span>{{ payout.method }} · {{ payout.status }}</span>
+            <div class="actions" *ngIf="payout.status === 'pending'">
+              <button type="button" (click)="updatePayout(payout, 'approved')">Approuver</button>
+              <button type="button" (click)="updatePayout(payout, 'rejected')">Rejeter</button>
+            </div>
+            <button type="button" *ngIf="payout.status === 'approved'" (click)="updatePayout(payout, 'paid')">Marquer paye</button>
+          </article>
+        </section>
+
+        <section class="panel" *ngIf="activeTab === 'settings'">
+          <h1 class="page-title">Parametres</h1>
+          <article class="project-card">
+            <strong>Regles critiques</strong>
+            <span>PII bloquee, retraits valides par admin, utilisateurs suspendables.</span>
+          </article>
+        </section>
+      </ng-container>
+
+      <nav class="admin-nav">
+        <button type="button" [class.active]="activeTab === 'overview'" (click)="activeTab = 'overview'"><ion-icon name="grid"></ion-icon><span>Tableau</span></button>
+        <button type="button" [class.active]="activeTab === 'users'" (click)="activeTab = 'users'"><ion-icon name="people"></ion-icon><span>Utilisateurs</span></button>
+        <button type="button" [class.active]="activeTab === 'projects'" (click)="activeTab = 'projects'"><ion-icon name="briefcase"></ion-icon><span>Projets</span></button>
+        <button type="button" [class.active]="activeTab === 'payments'" (click)="activeTab = 'payments'"><ion-icon name="card"></ion-icon><span>Paiements</span></button>
+        <button type="button" [class.active]="activeTab === 'settings'" (click)="activeTab = 'settings'"><ion-icon name="settings"></ion-icon><span>Parametres</span></button>
+      </nav>
+    </div>
+  </div>
+</ion-content>

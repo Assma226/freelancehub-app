@@ -63,6 +63,16 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'admin',
+    loadComponent: () => import('./admin-dashboard/admin-dashboard.page').then(m => m.AdminDashboardPage),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'payments',
+    loadComponent: () => import('./payments/payments.page').then(m => m.PaymentsPage),
+    canActivate: [authGuard],
+  },
+  {
     path: 'service-market/:slug',
     loadComponent: () => import('./service-market/service-market.page').then(m => m.ServiceMarketPage),
   },

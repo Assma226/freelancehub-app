@@ -1,60 +1,139 @@
 <ion-content>
-  <div class="jobs-shell">
+  <div class="jobs-shell" [class.freelancer-jobs]="isFreelancer">
     <div class="jobs-frame">
       <div class="top-bar">
         <div class="top-left">
-          <button type="button" class="back-btn">&lt;</button>
-          <span>My Jobs</span>
+          <button type="button" class="back-btn" [class.freelancer-back]="isFreelancer" (click)="goBack()">&lt;</button>
+          <span>{{ heroTitle }}</span>
         </div>
         <app-account-menu></app-account-menu>
       </div>
 
-      <div class="tabs">
-        <button type="button" [class.active]="tab === 'bid'" (click)="tab = 'bid'">Job Bid</button>
-        <button type="button" [class.active]="tab === 'pending'" (click)="tab = 'pending'">Pending</button>
-        <button type="button" [class.active]="tab === 'reviewed'" (click)="tab = 'reviewed'">Reviewed ({{ reviewed.length }})</button>
+      <section class="hero-panel" [class.freelancer-hero]="isFreelancer">
+        <small>{{ role === 'client' ? 'Pilotage TalentHub' : 'Performance TalentHub' }}</small>
+        <h1>{{ heroTitle }}</h1>
+        <p>{{ heroCopy }}</p>
+        <div class="summary-grid">
+          <article class="summary-card" *ngFor="let card of summaryCards">
+            <strong>{{ card.value }}</strong>
+            <span>{{ card.label }}</span>
+            <small>{{ card.helper }}</small>
+          </article>
+        </div>
+      </section>
+
+      <section class="action-panel" *ngIf="!loading && isFreelancer && actionItems.length">
+        <div class="spotlight-head freelancer-head">
+          <h2>A faire maintenant</h2>
+          <button type="button" class="mini-action freelancer-mini" (click)="startHere()">Trouver une mission</button>
+        </div>
+        <div class="action-list">
+          <button type="button" class="action-card" *ngFor="let item of actionItems" (click)="openAction(item)">
+            <small>{{ item.eyebrow }}</small>
+            <strong>{{ item.title }}</strong>
+            <span>{{ item.copy }}</span>
+            <b>{{ item.action }}</b>
+          </button>
+        </div>
+      </section>
+
+      <section class="spotlight-panel" [class.freelancer-spotlight]="isFreelancer" *ngIf="!loading && spotlightItems.length">
+        <div class="spotlight-head" [class.freelancer-head]="isFreelancer">
+          <h2>{{ role === 'client' ? 'A suivre maintenant' : 'Mes projets a surveiller' }}</h2>
+          <button type="button" class="mini-action" [class.freelancer-mini]="isFreelancer" (click)="tab = 'pending'">Voir plus</button>
+        </div>
+        <div class="spotlight-list">
+          <article class="spotlight-card" [class.freelancer-spotlight-card]="isFreelancer" *ngFor="let item of spotlightItems" (click)="goProject(item.id)">
+            <div>
+              <strong>{{ item.title }}</strong>
+              <span>{{ item.category || item.company }}</span>
+            </div>
+            <span class="status-pill" [class.pending]="item.status === 'open' || item.status === 'pending'" [class.progress]="item.status === 'in-progress' || item.status === 'accepted'" [class.done]="item.status === 'completed'" [class.cancelled]="item.status === 'cancelled' || item.status === 'rejected'" [class.freelancer-progress]="isFreelancer && (item.status === 'in-progress' || item.status === 'accepted')" [class.freelancer-done]="isFreelancer && item.status === 'completed'">
+              {{ statusLabel(item.status) }}
+            </span>
+          </article>
+        </div>
+      </section>
+
+      <div class="mission-tabs" *ngIf="isFreelancer">
+        <button
+          type="button"
+          *ngFor="let filter of missionFilters"
+          [class.active]="missionFilter === filter.key"
+          (click)="missionFilter = filter.key"
+        >
+          <span>{{ filter.label }}</span>
+          <b>{{ filter.count }}</b>
+        </button>
+      </div>
+
+      <div class="tabs" *ngIf="!isFreelancer">
+        <button type="button" [class.active]="tab === 'bid'" [class.freelancer-tab]="isFreelancer" (click)="tab = 'bid'">{{ role === 'client' ? 'Ouverts' : 'Propositions' }}</button>
+        <button type="button" [class.active]="tab === 'pending'" [class.freelancer-tab]="isFreelancer" (click)="tab = 'pending'">{{ role === 'client' ? 'En cours' : 'Actifs' }}</button>
+        <button type="button" [class.active]="tab === 'reviewed'" [class.freelancer-tab]="isFreelancer" (click)="tab = 'reviewed'">{{ role === 'client' ? 'Historique' : 'Traites' }} ({{ reviewed.length }})</button>
       </div>
 
       <div class="loading" *ngIf="loading">
         <ion-spinner name="crescent"></ion-spinner>
       </div>
 
-      <div class="empty-state" *ngIf="!loading && !currentItems.length">
+      <div class="empty-state" [class.freelancer-empty]="isFreelancer" *ngIf="!loading && !currentItems.length">
         <h2>{{ emptyStateTitle }}</h2>
         <p>{{ emptyStateCopy }}</p>
-        <button type="button" class="start-btn" (click)="startHere()">Start Here</button>
+        <button type="button" class="start-btn" [class.freelancer-start]="isFreelancer" (click)="startHere()">
+          {{ role === 'client' ? 'Publier une demande' : 'Explorer les projets' }}
+        </button>
       </div>
 
       <div class="list-zone" *ngIf="!loading && currentItems.length">
-        <article class="job-card" *ngFor="let item of currentItems">
+        <article class="job-card" [class.freelancer-job-card]="isFreelancer" *ngFor="let item of currentItems">
           <div class="job-head">
             <div>
               <strong>{{ item.title }}</strong>
               <span>{{ item.category || item.company }}</span>
             </div>
-            <button type="button" class="open-btn" (click)="goProject(item.id)">Open</button>
+            <button type="button" class="open-btn" [class.freelancer-open]="isFreelancer" (click)="openPrimaryJobAction(item)">
+              {{ primaryJobActionLabel(item) }}
+            </button>
           </div>
 
           <div class="status-row">
-            <span class="status-pill" [class.pending]="item.status === 'open' || item.status === 'pending'" [class.progress]="item.status === 'in-progress' || item.status === 'accepted'" [class.done]="item.status === 'completed'" [class.cancelled]="item.status === 'cancelled' || item.status === 'rejected'">
+            <span class="status-pill" [class.pending]="item.status === 'open' || item.status === 'pending'" [class.progress]="item.status === 'in-progress' || item.status === 'accepted'" [class.done]="item.status === 'completed'" [class.cancelled]="item.status === 'cancelled' || item.status === 'rejected'" [class.freelancer-progress]="isFreelancer && (item.status === 'in-progress' || item.status === 'accepted')" [class.freelancer-done]="isFreelancer && item.status === 'completed'">
               {{ statusLabel(item.status) }}
+            </span>
+            <span class="payment-pill" *ngIf="isFreelancer" [class.funded]="item.escrowStatus === 'funded'" [class.released]="item.escrowStatus === 'released'" [class.refunded]="item.escrowStatus === 'refunded'">
+              {{ item.paymentLabel }}
             </span>
             <button type="button" class="history-toggle" *ngIf="role === 'client' && item.statusHistory.length" (click)="toggleHistory(item.id)">
               {{ expandedHistoryId === item.id ? 'Hide history' : 'View history' }}
             </button>
           </div>
 
+          <p class="mission-alert" *ngIf="isFreelancer && item.alert" [class.ready]="item.canAddProgress" [class.warn]="item.contractStatus !== 'signed'" [class.refunded]="item.escrowStatus === 'refunded'">
+            {{ item.alert }}
+          </p>
+
           <div class="job-meta" *ngIf="role === 'client'">
             <span>Budget max: ${{ item.bid }}</span>
             <span>{{ item.applicants }} candidats</span>
           </div>
-          <div class="job-meta" *ngIf="role !== 'client'">
-            <span>Proposition: ${{ item.bid }}</span>
-            <span>Net: ${{ item.receives }}</span>
+          <div class="job-meta freelancer-meta" *ngIf="role !== 'client'">
+            <span>
+              <small>Proposition</small>
+              <b>${{ item.bid }}</b>
+            </span>
+            <span>
+              <small>Net estime</small>
+              <b>${{ item.receives }}</b>
+            </span>
+            <span>
+              <small>Frais</small>
+              <b>${{ item.fee }}</b>
+            </span>
           </div>
 
-          <button type="button" class="candidate-toggle" *ngIf="item.status === 'in-progress' || item.status === 'accepted'" (click)="openTracker()">
-            Ouvrir le tracker
+          <button type="button" class="candidate-toggle" *ngIf="(item.status === 'in-progress' || item.status === 'accepted') && (!isFreelancer || item.canAddProgress)" (click)="openTracker(item.id)">
+            {{ isFreelancer ? 'Ajouter avancement' : 'Ouvrir le tracker' }}
           </button>
           <button type="button" class="candidate-toggle" *ngIf="item.status === 'in-progress' || item.status === 'accepted'" (click)="openContract(item.id)">
             Voir l accord de mission
@@ -68,7 +147,7 @@
             <div class="loading" *ngIf="applicationsLoading[item.id]">
               <ion-spinner name="crescent"></ion-spinner>
             </div>
-            <article class="candidate-card" *ngFor="let app of applicationsByProject[item.id] || []">
+            <article class="candidate-card" [class.freelancer-candidate-card]="isFreelancer" *ngFor="let app of applicationsByProject[item.id] || []">
               <strong>{{ app.freelancer_name || 'Freelancer' }}</strong>
               <span>${{ app.bid_amount || 0 }} - {{ app.status || 'pending' }}</span>
               <p>{{ app.cover_letter || 'Aucune lettre.' }}</p>
@@ -88,6 +167,21 @@
           </div>
         </article>
       </div>
+
+      <section class="completed-panel" [class.freelancer-completed]="isFreelancer" *ngIf="!loading && isFreelancer && completedProjects.length">
+        <div class="spotlight-head" [class.freelancer-head]="isFreelancer">
+          <h2>Projets realises</h2>
+          <button type="button" class="mini-action" [class.freelancer-mini]="isFreelancer" (click)="openTracker(completedProjects[0]?.id)">Voir le suivi</button>
+        </div>
+        <div class="completed-list">
+          <article class="completed-card" [class.freelancer-completed-card]="isFreelancer" *ngFor="let project of completedProjects.slice(0, 3)">
+            <strong>{{ project.title || 'Projet termine' }}</strong>
+            <span>{{ project.category || project.category_name || 'Mission livree' }}</span>
+            <p>{{ project.progress_last_note || project.description || 'Livraison finalisee avec succes.' }}</p>
+            <small>Budget {{ project.agreed_amount ? ('$' + project.agreed_amount) : ('$' + (project.budget_max || project.budgetMax || 0)) }}</small>
+          </article>
+        </div>
+      </section>
 
       <app-user-bottom-nav [role]="role" active="jobs"></app-user-bottom-nav>
     </div>

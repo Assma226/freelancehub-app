@@ -82,7 +82,16 @@
         <button type="button" class="open-btn" (click)="openProject(selectedProject.id)">Ouvrir le projet</button>
       </section>
 
-      <section class="panel-card form-card" *ngIf="!loading && selectedProject && role === 'freelancer'">
+      <section class="panel-card form-card" *ngIf="!loading && selectedProject && role === 'freelancer' && !canAddProgress">
+        <div class="section-head">
+          <h3>Avancement indisponible</h3>
+          <span>{{ selectedProject.escrow_status || 'not_funded' }}</span>
+        </div>
+        <p class="empty-state">{{ paymentStateMessage }}</p>
+        <button type="button" class="open-btn" (click)="openProject(selectedProject.id)">Voir la mission</button>
+      </section>
+
+      <section class="panel-card form-card" *ngIf="!loading && selectedProject && canAddProgress">
         <div class="section-head">
           <h3>Journal du jour</h3>
           <span>Pour rassurer le client</span>

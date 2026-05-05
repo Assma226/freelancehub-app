@@ -16,7 +16,8 @@
 from flask               import Blueprint, request, jsonify
 from app                 import mongo
 from app.middleware.auth import token_required, client_only, freelancer_only, _get_identity
-from app.utils.notifications import create_notification
+from app.services.pii_service import analyze_message, pii_error_response
+from app.utils.notifications import create_notification, notify_admins
 from bson                import ObjectId
 from datetime            import datetime, timezone
 
@@ -115,6 +116,11 @@ def _project_to_dict(p: dict) -> dict:
     contract.setdefault('deliverables', [])
     contract.setdefault('client_signed_at', None)
     contract.setdefault('freelancer_signed_at', None)
+    doc['escrow_status'] = doc.get('escrow_status', 'not_funded')
+    doc['payment_required'] = (
+        contract.get('status') == 'signed'
+        and doc.get('escrow_status') not in {'funded', 'released', 'refunded'}
+    )
     doc['contract'] = contract
 
     return doc
@@ -613,6 +619,10 @@ def apply_project(project_id: str):
     if not bid_amount or not cover_letter:
         return jsonify({'error': 'bid_amount et cover_letter sont requis'}), 400
 
+    pii_analysis = analyze_message(cover_letter)
+    if pii_analysis.get('contains_pii'):
+        return jsonify(pii_error_response(pii_analysis)), 400
+
     try:
         bid_amount = float(bid_amount)
         oid        = ObjectId(project_id)
@@ -777,6 +787,7 @@ def review_application(project_id: str, app_id: str):
                 'status':              'in-progress',
                 'accepted_freelancer': application['freelancer_id'],
                 'agreed_amount':       application['bid_amount'],
+                'escrow_status':       'awaiting_contract',
                 'contract': {
                     'status': 'draft',
                     'amount': application['bid_amount'],
@@ -849,6 +860,14 @@ def update_project_status(project_id: str):
         return jsonify({'message': 'Statut inchangé', 'status': current_status})
     if next_status not in allowed_transitions.get(current_status, set()):
         return jsonify({'error': f'Transition impossible de {current_status} vers {next_status}'}), 400
+    if next_status == 'completed':
+        escrow_tx = mongo.db.transactions.find_one({
+            'project_id': oid,
+            'type': 'project_payment',
+            'status': {'$in': ['held', 'disputed', 'completed']},
+        })
+        if not escrow_tx:
+            return jsonify({'error': 'Le paiement escrow doit etre finance avant de terminer le projet'}), 400
 
     now = datetime.now(timezone.utc)
     updates = {
@@ -877,6 +896,26 @@ def update_project_status(project_id: str):
         )
         if next_status == 'completed':
             _append_project_to_freelancer_portfolio(project)
+            escrow_tx = mongo.db.transactions.find_one({
+                'project_id': oid,
+                'type': 'project_payment',
+                'status': {'$in': ['held', 'disputed']},
+            })
+            if escrow_tx:
+                notify_admins(
+                    notif_type='escrow_release_requested',
+                    title='Escrow release requested',
+                    body=f"{project.get('title', 'A project')} was marked completed. Please review and release the escrow.",
+                    actor_id=project['client_id'],
+                    entity_id=escrow_tx['_id'],
+                    entity_type='transaction',
+                    meta={
+                        'project_id': str(oid),
+                        'transaction_id': str(escrow_tx['_id']),
+                        'amount': escrow_tx.get('freelancer_receives', escrow_tx.get('gross_amount', 0)),
+                        'escrow_status': escrow_tx.get('escrow_status', 'funded'),
+                    },
+                )
 
     refreshed = mongo.db.projects.find_one({'_id': oid})
     return jsonify(_project_to_dict(refreshed))
@@ -925,7 +964,7 @@ def upsert_project_contract(project_id: str):
     contract = _normalize_contract_payload(data, project)
     mongo.db.projects.update_one(
         {'_id': oid},
-        {'$set': {'contract': contract, 'updated_at': datetime.now(timezone.utc)}},
+        {'$set': {'contract': contract, 'escrow_status': 'awaiting_signature', 'updated_at': datetime.now(timezone.utc)}},
     )
     _append_status_history(oid, project.get('status', 'in-progress'), ObjectId(identity['id']), 'Mission agreement updated')
 
@@ -967,9 +1006,13 @@ def sign_project_contract(project_id: str):
     contract['freelancer_signed_at'] = datetime.now(timezone.utc)
     contract['status'] = 'signed' if contract.get('client_signed_at') else 'pending-signature'
 
+    project_updates = {'contract': contract, 'updated_at': datetime.now(timezone.utc)}
+    if contract['status'] == 'signed' and project.get('escrow_status') not in {'funded', 'released'}:
+        project_updates['escrow_status'] = 'awaiting_payment'
+
     mongo.db.projects.update_one(
         {'_id': oid},
-        {'$set': {'contract': contract, 'updated_at': datetime.now(timezone.utc)}},
+        {'$set': project_updates},
     )
     _append_status_history(oid, project.get('status', 'in-progress'), ObjectId(identity['id']), 'Mission agreement signed')
 
@@ -983,6 +1026,22 @@ def sign_project_contract(project_id: str):
         entity_type='project',
         meta={'project_id': str(oid), 'contract_status': contract['status']},
     )
+
+    if contract['status'] == 'signed':
+        create_notification(
+            user_id=project['client_id'],
+            notif_type='payment_required',
+            title='Payment required',
+            body=f"Please fund escrow for {project.get('title', 'your project')} so the mission can continue.",
+            actor_id=ObjectId(identity['id']),
+            entity_id=oid,
+            entity_type='project',
+            meta={
+                'project_id': str(oid),
+                'amount': contract.get('amount', project.get('agreed_amount', 0)),
+                'escrow_status': 'awaiting_payment',
+            },
+        )
 
     refreshed = mongo.db.projects.find_one({'_id': oid})
     return jsonify(_project_to_dict(refreshed))
@@ -1004,6 +1063,8 @@ def add_project_progress(project_id: str):
         return jsonify({'error': 'Projet introuvable'}), 404
     if project.get('status') != 'in-progress':
         return jsonify({'error': 'Le suivi est disponible uniquement pour les projets en cours'}), 400
+    if project.get('escrow_status') != 'funded':
+        return jsonify({'error': 'Le paiement escrow doit etre finance avant de demarrer le suivi'}), 400
     if not _can_access_tracking(project, identity):
         return jsonify({'error': 'Non autorise'}), 403
 

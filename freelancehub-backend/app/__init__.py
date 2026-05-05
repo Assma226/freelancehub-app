@@ -80,6 +80,7 @@ def _register_blueprints(app: Flask) -> None:
     from app.routes.payments   import payments_bp
     from app.routes.messages   import messages_bp
     from app.routes.notifications import notifications_bp
+    from app.routes.admin      import admin_bp
 
     app.register_blueprint(auth_bp,       url_prefix='/api/auth')
     app.register_blueprint(users_bp,      url_prefix='/api/users')
@@ -88,3 +89,4 @@ def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(payments_bp,   url_prefix='/api/payments')
     app.register_blueprint(messages_bp,   url_prefix='/api/messages')
     app.register_blueprint(notifications_bp, url_prefix='/api/notifications')
+    app.register_blueprint(admin_bp,      url_prefix='/api/admin')

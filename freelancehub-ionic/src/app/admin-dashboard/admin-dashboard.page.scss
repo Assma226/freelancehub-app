@@ -1,0 +1,290 @@
+.admin-shell {
+  min-height: 100%;
+  background: #f3f0f3;
+}
+
+.admin-frame {
+  min-height: 100vh;
+  padding: 18px 16px 86px;
+  background: #fbf8fa;
+}
+
+.admin-top {
+  display: grid;
+  grid-template-columns: 40px 1fr 38px 38px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.admin-avatar,
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: #a31643;
+  color: #fff;
+  font-weight: 900;
+}
+
+.avatar.large {
+  width: 52px;
+  height: 52px;
+}
+
+.admin-top small,
+.user-row small,
+.user-card small,
+.project-card span,
+.payment-card span {
+  display: block;
+  color: #8f8790;
+  font-size: 12px;
+}
+
+.admin-top strong {
+  display: block;
+  color: #211923;
+  font-size: 18px;
+}
+
+.icon-button {
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 12px;
+  background: #fff;
+  color: #7f1637;
+}
+
+.hero-card {
+  margin-bottom: 16px;
+  padding: 22px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #a31643, #c62961);
+  color: #fff;
+}
+
+.hero-card small {
+  text-transform: uppercase;
+  opacity: 0.75;
+  font-size: 11px;
+}
+
+.hero-card h1 {
+  margin: 8px 0 4px;
+  color: #fff;
+  font-size: 28px;
+}
+
+.panel {
+  margin-bottom: 16px;
+}
+
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.section-title h2,
+.page-title {
+  margin: 0;
+  color: #211923;
+  font-size: 19px;
+  line-height: 1.15;
+}
+
+.section-title button,
+.actions button,
+.payment-card button,
+.chips button {
+  border: 1px solid #eadde3;
+  border-radius: 12px;
+  background: #fff;
+  color: #8f1735;
+  padding: 9px 13px;
+  font-weight: 800;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stats-grid article,
+.user-card,
+.project-card,
+.payment-card,
+.user-row {
+  border: 0;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(143, 23, 53, 0.06);
+}
+
+.stats-grid article {
+  min-height: 86px;
+  padding: 16px;
+}
+
+.stats-grid span {
+  color: #8f8790;
+  font-size: 12px;
+}
+
+.stats-grid strong {
+  display: block;
+  margin-top: 8px;
+  color: #211923;
+  font-size: 26px;
+}
+
+.user-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 12px;
+  text-align: left;
+}
+
+.user-row strong,
+.user-card strong,
+.project-card strong,
+.payment-card strong {
+  color: #211923;
+}
+
+.user-row em,
+.user-card em {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: #e8f7ec;
+  color: #13823b;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.user-row em.off,
+.actions span.off {
+  background: #fff0df;
+  color: #c46a00;
+}
+
+.search {
+  width: 100%;
+  height: 54px;
+  margin: 14px 0 10px;
+  border: 0;
+  border-radius: 16px;
+  padding: 0 16px;
+  background: #fff;
+  box-shadow: inset 0 1px 0 rgba(17, 24, 39, 0.04);
+}
+
+.chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin-bottom: 12px;
+}
+
+.chips button.active {
+  background: #a31643;
+  color: #fff;
+}
+
+.user-card,
+.project-card,
+.payment-card {
+  margin-bottom: 12px;
+  padding: 14px;
+}
+
+.user-main {
+  display: grid;
+  grid-template-columns: 54px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.user-card p {
+  margin: 12px 0;
+  padding: 10px;
+  border-radius: 12px;
+  background: #effaf3;
+  color: #29663d;
+  font-size: 12px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.actions span {
+  margin-right: auto;
+  color: #13823b;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.project-card small {
+  display: block;
+  margin-top: 8px;
+  color: #8f1735;
+  font-weight: 900;
+}
+
+.error {
+  padding: 10px;
+  border-radius: 12px;
+  background: #fff0f3;
+  color: #a31643;
+  font-weight: 800;
+}
+
+.admin-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  background: #fff;
+  border-top: 1px solid #f0e7eb;
+  z-index: 30;
+}
+
+.admin-nav button {
+  min-height: 66px;
+  border: 0;
+  background: transparent;
+  color: #837b84;
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.admin-nav ion-icon {
+  font-size: 21px;
+}
+
+.admin-nav button.active {
+  color: #8f1735;
+  background: #fff1f6;
+}

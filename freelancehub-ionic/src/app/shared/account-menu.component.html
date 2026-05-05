@@ -17,6 +17,16 @@
       <ion-icon class="menu-icon" name="notifications"></ion-icon>
       <span>Alerts</span>
     </button>
+
+    <button type="button" class="menu-item" (click)="openPayments($event)">
+      <ion-icon class="menu-icon" name="card"></ion-icon>
+      <span>{{ user?.role === 'freelancer' ? 'Wallet' : 'Payments' }}</span>
+    </button>
+
+    <button type="button" class="menu-item" *ngIf="user?.role === 'admin'" (click)="openAdmin($event)">
+      <ion-icon class="menu-icon" name="speedometer"></ion-icon>
+      <span>Admin</span>
+    </button>
     
     <button type="button" class="menu-item" (click)="openSettings($event)">
       <ion-icon class="menu-icon" name="settings"></ion-icon>

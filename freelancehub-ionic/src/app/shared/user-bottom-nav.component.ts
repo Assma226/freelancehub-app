@@ -76,8 +76,8 @@ type NavKey = 'home' | 'jobs' | 'services' | 'profile' | 'messages' | 'favorites
   `,
   styles: [`
     :host {
-      --color-primary: #9a2f4f;
-      --color-primary-light: #c44569;
+      --color-primary: #8f1735;
+      --color-primary-light: #a3314d;
       --color-text-primary: #2d2d2d;
       --color-text-secondary: #8a8a8a;
       --color-border: #f0f0f0;
@@ -230,7 +230,7 @@ type NavKey = 'home' | 'jobs' | 'services' | 'profile' | 'messages' | 'favorites
     /* Hover Effects for Non-Active Items */
     .nav-item:not(.active):hover {
       color: var(--color-text-primary);
-      background: rgba(154, 47, 79, 0.05);
+      background: rgba(143, 23, 53, 0.05);
     }
 
     /* Responsive Design for Smaller Screens */
@@ -248,13 +248,13 @@ type NavKey = 'home' | 'jobs' | 'services' | 'profile' | 'messages' | 'favorites
     /* Touch-friendly padding */
     @media (hover: none) and (pointer: coarse) {
       .nav-item:active {
-        background: rgba(154, 47, 79, 0.08);
+        background: rgba(143, 23, 53, 0.08);
       }
     }
   `],
 })
 export class UserBottomNavComponent implements OnInit, OnChanges {
-  @Input() role: 'client' | 'freelancer' | null = null;
+  @Input() role: 'client' | 'freelancer' | 'admin' | null = null;
   @Input() active: NavKey = 'home';
   @Input() unreadMessages: number | null = null;
   @Input() unreadNotifications: number | null = null;
