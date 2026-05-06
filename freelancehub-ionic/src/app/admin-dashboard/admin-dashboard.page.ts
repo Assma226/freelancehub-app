@@ -125,6 +125,7 @@ export class AdminDashboardPage implements OnInit {
     if (!res.ok) throw new Error('projects');
     const data = await res.json() as { projects?: AdminProject[] };
     this.projects = data.projects || [];
+
   }
 
   async loadPayments() {
@@ -135,6 +136,7 @@ export class AdminDashboardPage implements OnInit {
     if (!txRes.ok || !payoutRes.ok) throw new Error('payments');
     const txData = await txRes.json() as { transactions?: AdminTransaction[] };
     const payoutData = await payoutRes.json() as { payouts?: AdminPayout[] };
+
     this.transactions = txData.transactions || [];
     this.payouts = payoutData.payouts || [];
   }
@@ -162,6 +164,7 @@ export class AdminDashboardPage implements OnInit {
   }
 
   initials(name?: string) {
+    
     const clean = (name || 'A').trim();
     return clean.charAt(0).toUpperCase();
   }
