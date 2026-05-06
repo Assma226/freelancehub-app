@@ -2,10 +2,14 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { IonContent } from '@ionic/angular/standalone';
+import { IonContent, IonIcon } from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import { refresh } from 'ionicons/icons';
 import { AccountMenuComponent } from '../shared/account-menu.component';
 import { apiAuthHeaders, apiUrl, getSessionUser } from '../shared/api-url';
 import { ApiErrorBody } from '../shared/api.dto';
+
+addIcons({ refresh });
 
 interface PaymentTx {
   _id?: string;
@@ -45,7 +49,7 @@ interface Dispute {
 @Component({
   selector: 'app-payments',
   standalone: true,
-  imports: [CommonModule, FormsModule, IonContent, AccountMenuComponent],
+  imports: [CommonModule, FormsModule, IonContent, IonIcon, AccountMenuComponent],
   templateUrl: './payments.page.html',
   styleUrl: './payments.page.scss',
 })
@@ -136,6 +140,24 @@ export class PaymentsPage implements OnInit {
     this.success = 'Demande de retrait envoyee a l admin.';
     this.payoutForm.amount = 0;
     this.payoutForm.destination = '';
+    await this.loadSummary();
+  }
+
+  async updatePayout(payout: Payout, status: 'approved' | 'paid' | 'rejected') {
+    if (!payout._id) return;
+    this.error = '';
+    this.success = '';
+    const res = await fetch(apiUrl(`/api/admin/payouts/${payout._id}/status`), {
+      method: 'PUT',
+      headers: apiAuthHeaders(),
+      body: JSON.stringify({ status }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null) as ApiErrorBody | null;
+      this.error = data?.error || 'Impossible de mettre a jour le retrait.';
+      return;
+    }
+    this.success = 'Retrait mis a jour.';
     await this.loadSummary();
   }
 
@@ -244,6 +266,12 @@ export class PaymentsPage implements OnInit {
     return this.paymentMethods.find(method => method.value === value)?.label || value || 'Mode de paiement';
   }
 
+  paymentTypeLabel(value?: string) {
+    if (value === 'project_payment') return 'Paiement projet';
+    if (value === 'subscription') return 'Abonnement';
+    return value || 'Transaction';
+  }
+
   txAmount(tx: PaymentTx) {
     return tx.client_pays || tx.freelancer_receives || tx.platform_revenue || tx.refund_amount || tx.amount || tx.gross_amount || 0;
   }
@@ -266,5 +294,35 @@ export class PaymentsPage implements OnInit {
     if (tx.status === 'refunded') return 'Rembourse';
     if (tx.status === 'disputed') return 'Litige';
     return tx.status || 'completed';
+  }
+
+  payoutStatusLabel(status?: string) {
+    if (status === 'pending') return 'En attente';
+    if (status === 'approved') return 'Approuve';
+    if (status === 'paid') return 'Paye';
+    if (status === 'rejected') return 'Rejete';
+    return status || 'Statut';
+  }
+
+  disputeStatusLabel(status?: string) {
+    if (status === 'open') return 'Ouvert';
+    if (status === 'resolved') return 'Resolu';
+    return status || 'Statut';
+  }
+
+  initials(name?: string) {
+    const clean = (name || 'A').trim();
+    return clean.charAt(0).toUpperCase();
+  }
+
+  formatDate(value?: string) {
+    if (!value) return 'Date non renseignee';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return new Intl.DateTimeFormat('fr-FR', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    }).format(date);
   }
 }

@@ -169,4 +169,41 @@ export class AdminDashboardPage implements OnInit {
   money(value?: number) {
     return `$${Math.round(Number(value || 0))}`;
   }
+
+  txAmount(tx: AdminTransaction) {
+    return tx.client_pays || tx.platform_revenue || tx.amount || tx.gross_amount || 0;
+  }
+
+  paymentTypeLabel(value?: string) {
+    if (value === 'project_payment') return 'Paiement projet';
+    if (value === 'subscription') return 'Abonnement';
+    return value || 'Transaction';
+  }
+
+  paymentStatusLabel(value?: string) {
+    if (value === 'held') return 'Escrow bloque';
+    if (value === 'completed') return 'Libere';
+    if (value === 'disputed') return 'Litige';
+    if (value === 'refunded') return 'Rembourse';
+    return value || 'Statut';
+  }
+
+  payoutStatusLabel(value?: string) {
+    if (value === 'pending') return 'En attente';
+    if (value === 'approved') return 'Approuve';
+    if (value === 'paid') return 'Paye';
+    if (value === 'rejected') return 'Rejete';
+    return value || 'Statut';
+  }
+
+  formatDate(value?: string) {
+    if (!value) return 'Date non renseignee';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return new Intl.DateTimeFormat('fr-FR', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    }).format(date);
+  }
 }

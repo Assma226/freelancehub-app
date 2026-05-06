@@ -248,6 +248,71 @@
   font-weight: 900;
 }
 
+.payments-stats {
+  margin-bottom: 14px;
+}
+
+.payments-group + .payments-group {
+  margin-top: 16px;
+}
+
+.section-title.compact {
+  margin-bottom: 10px;
+}
+
+.section-title.compact small {
+  color: #8f8790;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.payment-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.status-pill {
+  width: fit-content;
+  height: fit-content;
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.status-pill.pending {
+  background: #fff0df;
+  color: #c46a00;
+}
+
+.status-pill.approved {
+  background: #fff1f6;
+  color: #8f1735;
+}
+
+.status-pill.paid {
+  background: #e8f7ec;
+  color: #13823b;
+}
+
+.status-pill.rejected {
+  background: #fff0f3;
+  color: #a31643;
+}
+
+.empty-state {
+  margin: 0 0 10px;
+  padding: 12px;
+  border-radius: 14px;
+  background: #fbf8fa;
+  color: #8f8790;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .error {
   padding: 10px;
   border-radius: 12px;

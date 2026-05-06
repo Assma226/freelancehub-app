@@ -66,7 +66,7 @@
                 <em>{{ u.role }}</em>
               </div>
             </div>
-            <p *ngIf="u.role === 'freelancer'">Profil {{ u.profile_exists ? 'freelancer valide' : 'a completer' }} · {{ u.applications_count || 0 }} candidatures</p>
+            <p *ngIf="u.role === 'freelancer'">Profil {{ u.profile_exists ? 'freelancer valide' : 'a completer' }} - {{ u.applications_count || 0 }} candidatures</p>
             <p *ngIf="u.role === 'client'">{{ u.projects_count || 0 }} projets publies</p>
             <div class="actions">
               <span [class.off]="u.is_active === false">{{ u.is_active === false ? 'Bloque' : 'Actif' }}</span>
@@ -80,25 +80,75 @@
           <h1 class="page-title">Projets</h1>
           <article class="project-card" *ngFor="let p of projects">
             <strong>{{ p.title || 'Projet sans titre' }}</strong>
-            <span>{{ p.status || 'open' }} · {{ p.applicants_count || 0 }} candidatures</span>
+            <span>{{ p.status || 'open' }} - {{ p.applicants_count || 0 }} candidatures</span>
             <small>{{ money(p.agreed_amount) }}</small>
           </article>
         </section>
 
-        <section class="panel" *ngIf="activeTab === 'payments'">
+        <section class="panel payments-panel" *ngIf="activeTab === 'payments'">
           <div class="section-title">
             <h1 class="page-title">Paiements</h1>
-            <button type="button" (click)="goPayments()">Centre</button>
+            <button type="button" (click)="goPayments()">Centre complet</button>
           </div>
-          <article class="payment-card" *ngFor="let payout of payouts">
-            <strong>Retrait {{ money(payout.amount) }}</strong>
-            <span>{{ payout.method }} · {{ payout.status }}</span>
-            <div class="actions" *ngIf="payout.status === 'pending'">
-              <button type="button" (click)="updatePayout(payout, 'approved')">Approuver</button>
-              <button type="button" (click)="updatePayout(payout, 'rejected')">Rejeter</button>
+
+          <div class="stats-grid payments-stats">
+            <article><span>Transactions</span><strong>{{ stats['transactions'] || 0 }}</strong></article>
+            <article><span>Retraits attente</span><strong>{{ stats['pending_payouts'] || 0 }}</strong></article>
+            <article><span>Escrow bloque</span><strong>{{ money(stats['escrow_held']) }}</strong></article>
+            <article><span>Revenus plateforme</span><strong>{{ money(stats['platform_revenue']) }}</strong></article>
+          </div>
+
+          <div class="payments-group">
+            <div class="section-title compact">
+              <h2>Demandes de retrait</h2>
+              <small>{{ payouts.length }} recentes</small>
             </div>
-            <button type="button" *ngIf="payout.status === 'approved'" (click)="updatePayout(payout, 'paid')">Marquer paye</button>
-          </article>
+            <p class="empty-state" *ngIf="!payouts.length">Aucune demande de retrait pour le moment.</p>
+
+            <article class="payment-card" *ngFor="let payout of payouts | slice:0:4">
+              <div class="payment-card-head">
+                <div>
+                  <strong>Retrait {{ money(payout.amount) }}</strong>
+                  <span>{{ payout.method || 'Mode non renseigne' }} - {{ formatDate(payout.created_at) }}</span>
+                </div>
+                <em
+                  class="status-pill"
+                  [class.pending]="payout.status === 'pending'"
+                  [class.approved]="payout.status === 'approved'"
+                  [class.paid]="payout.status === 'paid'"
+                  [class.rejected]="payout.status === 'rejected'"
+                >
+                  {{ payoutStatusLabel(payout.status) }}
+                </em>
+              </div>
+              <div class="actions" *ngIf="payout.status === 'pending'">
+                <button type="button" (click)="updatePayout(payout, 'approved')">Approuver</button>
+                <button type="button" (click)="updatePayout(payout, 'rejected')">Rejeter</button>
+              </div>
+              <div class="actions" *ngIf="payout.status === 'approved'">
+                <span>Validation admin OK</span>
+                <button type="button" (click)="updatePayout(payout, 'paid')">Marquer paye</button>
+              </div>
+            </article>
+          </div>
+
+          <div class="payments-group">
+            <div class="section-title compact">
+              <h2>Transactions recentes</h2>
+              <small>{{ transactions.length }} chargees</small>
+            </div>
+            <p class="empty-state" *ngIf="!transactions.length">Aucune transaction recente.</p>
+
+            <article class="payment-card" *ngFor="let tx of transactions | slice:0:4">
+              <div class="payment-card-head">
+                <div>
+                  <strong>{{ paymentTypeLabel(tx.type) }}</strong>
+                  <span>{{ paymentStatusLabel(tx.status) }} - {{ formatDate(tx.created_at) }}</span>
+                </div>
+                <em class="status-pill paid">{{ money(txAmount(tx)) }}</em>
+              </div>
+            </article>
+          </div>
         </section>
 
         <section class="panel" *ngIf="activeTab === 'settings'">
