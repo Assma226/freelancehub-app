@@ -184,22 +184,27 @@ export class AdminDashboardPage implements OnInit {
   }
 
   paymentStatusLabel(value?: string) {
+
     if (value === 'held') return 'Escrow bloque';
     if (value === 'completed') return 'Libere';
     if (value === 'disputed') return 'Litige';
     if (value === 'refunded') return 'Rembourse';
+
     return value || 'Statut';
   }
 
   payoutStatusLabel(value?: string) {
+
     if (value === 'pending') return 'En attente';
     if (value === 'approved') return 'Approuve';
     if (value === 'paid') return 'Paye';
     if (value === 'rejected') return 'Rejete';
+
     return value || 'Statut';
   }
 
   formatDate(value?: string) {
+    
     if (!value) return 'Date non renseignee';
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return value;
