@@ -6,26 +6,27 @@
 .menu-trigger {
   width: 36px;
   height: 36px;
-  border: 0;
+  border: var(--account-trigger-border, 0);
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--account-trigger-bg, rgba(255, 255, 255, 0.15));
   cursor: pointer;
   transition: all 200ms ease-out;
   backdrop-filter: blur(4px);
-  color: #fff;
+  color: var(--account-trigger-color, #fff);
   font-size: 20px;
+  box-shadow: var(--account-trigger-shadow, none);
 }
 
 .menu-trigger:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--account-trigger-bg-hover, rgba(255, 255, 255, 0.25));
 }
 
 .menu-trigger.open {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--account-trigger-bg-open, rgba(255, 255, 255, 0.3));
   transform: rotate(45deg);
 }
 
@@ -35,6 +36,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  color: currentColor;
+  opacity: 1;
 }
 
 /* Menu Panel */
